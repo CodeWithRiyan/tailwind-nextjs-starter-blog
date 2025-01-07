@@ -28,22 +28,20 @@ const Header = () => {
   // Render a placeholder during SSR and initial render
   const logoElement = mounted ? (
     theme === 'dark' ? (
-      <NextImage width={280} src={LogoWhite} alt='Logo White' priority />
+      <NextImage width={280} src={LogoWhite} alt="Logo White" priority />
     ) : (
-      <NextImage width={280} src={LogoBlack} alt='Logo Black' priority />
+      <NextImage width={280} src={LogoBlack} alt="Logo Black" priority />
     )
   ) : (
     // Render a transparent placeholder during SSR to maintain layout
-    <div className="w-[280px] h-[50px]" /> // Adjust height based on your logo's aspect ratio
+    <div className="h-[50px] w-[280px]" /> // Adjust height based on your logo's aspect ratio
   )
 
   return (
     <header className={headerClass}>
       <Link href="/" aria-label={siteMetadata.headerTitle}>
         <div className="flex items-center justify-between">
-          <div className="mr-3">
-            {logoElement}
-          </div>
+          <div className="mr-3">{logoElement}</div>
         </div>
       </Link>
       <div className="flex items-center space-x-4 leading-5 sm:space-x-6">
