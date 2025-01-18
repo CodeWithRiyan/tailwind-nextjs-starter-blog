@@ -94,55 +94,51 @@ const ProjectSection: React.FC<ProjectSectionProps> = ({ isMain = false }) => {
         </div>
 
         {/* Pagination or See All button */}
-        <div className="mt-12 flex justify-center">
-          {isMain ? (
-            <Link
-              href="/projects"
-              className="inline-flex items-center rounded-lg bg-blue-500 px-6 py-3 text-white 
-                transition-colors duration-300 hover:bg-blue-600"
-            >
-              See All Projects
-            </Link>
-          ) : (
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-                className="rounded-lg bg-white p-2 text-gray-600 shadow-md transition-colors 
-                  hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 
-                  dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </button>
-
-              <div className="flex items-center space-x-2">
-                {[...Array(totalPages)].map((_, i) => (
-                  <button
-                    key={i + 1}
-                    onClick={() => handlePageChange(i + 1)}
-                    className={`h-10 w-10 rounded-lg transition-colors duration-300
-                      ${
-                        currentPage === i + 1
-                          ? 'bg-blue-500 text-white'
-                          : 'bg-white text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
-                      }`}
+        <div className="mt-12">
+          <div className="text-center">
+            <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+              {isMain ? (
+                <Link
+                  href="/projects"
+                  className="group flex items-center gap-2 rounded-full bg-gradient-to-r from-primary-600 to-primary-400 px-8 py-4 text-lg font-semibold text-white transition-all duration-300 hover:from-primary-700 hover:to-primary-500"
+                >
+                  View All Projects
+                  <svg
+                    className="h-5 w-5 transition-transform duration-300 group-hover:translate-x-1"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
                   >
-                    {i + 1}
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M14 5l7 7m0 0l-7 7m7-7H3"
+                    />
+                  </svg>
+                </Link>
+              ) : (
+                <div className="flex items-center gap-4">
+                  <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="flex items-center gap-2 rounded-full bg-gradient-to-r from-primary-600 to-primary-400 px-6 py-3 text-lg font-semibold text-white transition-all duration-300 hover:from-primary-700 hover:to-primary-500 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                    Previous
                   </button>
-                ))}
-              </div>
-
-              <button
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-                className="rounded-lg bg-white p-2 text-gray-600 shadow-md transition-colors 
-                  hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 
-                  dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-              >
-                <ChevronRight className="h-5 w-5" />
-              </button>
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="flex items-center gap-2 rounded-full bg-gradient-to-r from-primary-600 to-primary-400 px-6 py-3 text-lg font-semibold text-white transition-all duration-300 hover:from-primary-700 hover:to-primary-500 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Next
+                    <ChevronRight className="h-5 w-5" />
+                  </button>
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
       </div>
     </div>

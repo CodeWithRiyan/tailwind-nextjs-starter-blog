@@ -6,6 +6,7 @@ import Technology from '@/components/Technology'
 import siteMetadata from '@/data/siteMetadata'
 import ProjectSection from '@/components/Project'
 import TestimonialsSection from '@/components/Testimonials'
+import CTA from '@/components/sections/cta'
 
 const Home = () => {
   const [isVisible, setIsVisible] = useState(false)
@@ -44,6 +45,7 @@ const Home = () => {
         <Technology />
         <ProjectSection isMain={true} />
         <TestimonialsSection />
+        <CTA />
       </div>
     </>
   )

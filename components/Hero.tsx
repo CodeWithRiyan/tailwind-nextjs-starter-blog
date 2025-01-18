@@ -89,7 +89,7 @@ const BackgroundDecorations = ({ isVisible }) => {
           <div key={i}>
             {/* Persistent dot with gentle pulse */}
             <div
-              className={`absolute h-2 w-2 rounded-full bg-blue-400/70 dark:bg-blue-400/70
+              className={`absolute h-2 w-2 rounded-full bg-orange-400/70 dark:bg-orange-400/70
                   ${isVisible ? 'scale-100 opacity-100' : 'scale-0 opacity-0'}
                   transition-all duration-500`}
               style={{
@@ -101,7 +101,7 @@ const BackgroundDecorations = ({ isVisible }) => {
               {/* Continuous gentle pulse effect */}
               <div
                 className="animate-gentle-pulse absolute inset-0 rounded-full 
-                  bg-blue-300/50 dark:bg-blue-300/50"
+                  bg-orange-300/50 dark:bg-orange-300/50"
               />
             </div>
 
@@ -128,9 +128,9 @@ const BackgroundDecorations = ({ isVisible }) => {
                     <div className="h-full w-full">
                       <div
                         className="animate-connection-flow absolute inset-0 
-                          bg-gradient-to-r from-blue-400/30
-                          to-blue-400/30 dark:from-blue-400/30
-                          dark:to-blue-400/30"
+                          bg-gradient-to-r from-orange-400/30
+                          to-orange-400/30 dark:from-orange-400/30
+                          dark:to-orange-400/30"
                         style={{
                           animationDelay: `${(i + j) * 50}ms`,
                         }}
