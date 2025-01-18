@@ -37,8 +37,8 @@ const GlobalNotFound = () => {
             Looks like you've ventured into unknown territory!
           </h2>
           <p className="mx-auto max-w-md text-gray-600 dark:text-gray-400">
-            The page you're looking for doesn't exist or has been moved. 
-            Don't worry though, you can find lots of other interesting content on our site.
+            The page you're looking for doesn't exist or has been moved. Don't worry though, you can
+            find lots of other interesting content on our site.
           </p>
         </motion.div>
 
@@ -57,7 +57,7 @@ const GlobalNotFound = () => {
             <Home className="mr-2 h-4 w-4" />
             Back to Home
           </Link>
-          
+
           <Link
             href="/projects"
             className="inline-flex items-center rounded-lg border border-gray-300 bg-white px-6 py-3 
@@ -78,10 +78,7 @@ const GlobalNotFound = () => {
         >
           <p>
             Need help finding something specific?{' '}
-            <Link 
-              href="/contact" 
-              className="text-blue-600 hover:underline dark:text-blue-400"
-            >
+            <Link href="/contact" className="text-blue-600 hover:underline dark:text-blue-400">
               Contact us
             </Link>
             .

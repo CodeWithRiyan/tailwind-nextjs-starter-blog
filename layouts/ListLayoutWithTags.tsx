@@ -30,21 +30,26 @@ function Pagination({ totalPages, currentPage }: PaginationProps) {
   const nextPage = currentPage + 1 <= totalPages
 
   return (
-    <div className="pt-6 pb-8">
+    <div className="pb-8 pt-6">
       <nav className="flex items-center justify-between px-4 sm:px-0">
-        <div className="flex flex-1 justify-between sm:justify-end space-x-4">
+        <div className="flex flex-1 justify-between space-x-4 sm:justify-end">
           {!prevPage && (
-            <button className="relative inline-flex items-center rounded-md bg-gray-50 px-4 py-2 text-sm font-medium text-gray-400 cursor-not-allowed" disabled>
-              <ChevronLeft className="h-4 w-4 mr-2" />
+            <button
+              className="relative inline-flex cursor-not-allowed items-center rounded-md bg-gray-50 px-4 py-2 text-sm font-medium text-gray-400"
+              disabled
+            >
+              <ChevronLeft className="mr-2 h-4 w-4" />
               Previous
             </button>
           )}
           {prevPage && (
             <Link
-              href={currentPage - 1 === 1 ? `/${basePath}/` : `/${basePath}/page/${currentPage - 1}`}
-              className="relative inline-flex items-center rounded-md bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition duration-150 ease-in-out"
+              href={
+                currentPage - 1 === 1 ? `/${basePath}/` : `/${basePath}/page/${currentPage - 1}`
+              }
+              className="relative inline-flex items-center rounded-md bg-white px-4 py-2 text-sm font-medium text-gray-700 transition duration-150 ease-in-out hover:bg-gray-50"
             >
-              <ChevronLeft className="h-4 w-4 mr-2" />
+              <ChevronLeft className="mr-2 h-4 w-4" />
               Previous
             </Link>
           )}
@@ -52,18 +57,21 @@ function Pagination({ totalPages, currentPage }: PaginationProps) {
             Page {currentPage} of {totalPages}
           </span>
           {!nextPage && (
-            <button className="relative inline-flex items-center rounded-md bg-gray-50 px-4 py-2 text-sm font-medium text-gray-400 cursor-not-allowed" disabled>
+            <button
+              className="relative inline-flex cursor-not-allowed items-center rounded-md bg-gray-50 px-4 py-2 text-sm font-medium text-gray-400"
+              disabled
+            >
               Next
-              <ChevronRight className="h-4 w-4 ml-2" />
+              <ChevronRight className="ml-2 h-4 w-4" />
             </button>
           )}
           {nextPage && (
             <Link
               href={`/${basePath}/page/${currentPage + 1}`}
-              className="relative inline-flex items-center rounded-md bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition duration-150 ease-in-out"
+              className="relative inline-flex items-center rounded-md bg-white px-4 py-2 text-sm font-medium text-gray-700 transition duration-150 ease-in-out hover:bg-gray-50"
             >
               Next
-              <ChevronRight className="h-4 w-4 ml-2" />
+              <ChevronRight className="ml-2 h-4 w-4" />
             </Link>
           )}
         </div>
@@ -87,17 +95,17 @@ export default function ListLayoutWithTags({
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="pb-8">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white sm:text-5xl lg:text-6xl tracking-tight">
+          <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-5xl lg:text-6xl">
             {title}
           </h1>
         </div>
-        
+
         <div className="lg:grid lg:grid-cols-12 lg:gap-8">
-          <div className="hidden lg:block lg:col-span-3">
+          <div className="hidden lg:col-span-3 lg:block">
             <div className="sticky top-6">
-              <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+              <div className="overflow-hidden rounded-lg bg-white shadow dark:bg-gray-800">
                 <div className="p-6">
                   {pathname.startsWith('/blog') ? (
                     <h3 className="text-lg font-semibold text-primary-600 dark:text-primary-400">
@@ -106,7 +114,7 @@ export default function ListLayoutWithTags({
                   ) : (
                     <Link
                       href={`/blog`}
-                      className="text-lg font-semibold text-gray-900 dark:text-gray-100 hover:text-primary-600 dark:hover:text-primary-400 transition duration-150 ease-in-out"
+                      className="text-lg font-semibold text-gray-900 transition duration-150 ease-in-out hover:text-primary-600 dark:text-gray-100 dark:hover:text-primary-400"
                     >
                       All Posts
                     </Link>
@@ -122,7 +130,7 @@ export default function ListLayoutWithTags({
                           ) : (
                             <Link
                               href={`/tags/${slug(t)}`}
-                              className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition duration-150 ease-in-out"
+                              className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-600 transition duration-150 ease-in-out hover:text-primary-600 dark:text-gray-300 dark:hover:text-primary-400"
                             >
                               {`${t} (${tagCounts[t]})`}
                             </Link>
@@ -143,38 +151,38 @@ export default function ListLayoutWithTags({
                 return (
                   <article
                     key={path}
-                    className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden hover:shadow-lg transition duration-300 ease-in-out"
+                    className="overflow-hidden rounded-lg bg-white shadow transition duration-300 ease-in-out hover:shadow-lg dark:bg-gray-800"
                   >
                     <div className="p-6">
                       <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
-                        <Calendar className="h-4 w-4 mr-2" />
+                        <Calendar className="mr-2 h-4 w-4" />
                         <time dateTime={date} suppressHydrationWarning>
                           {formatDate(date, siteMetadata.locale)}
                         </time>
                       </div>
-                      
+
                       <div className="mt-4">
-                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white hover:text-primary-600 dark:hover:text-primary-400">
+                        <h2 className="text-2xl font-bold text-gray-900 hover:text-primary-600 dark:text-white dark:hover:text-primary-400">
                           <Link href={`/${path}`} className="hover:underline">
                             {title}
                           </Link>
                         </h2>
-                        
+
                         <div className="mt-3 flex flex-wrap gap-2">
                           {tags?.map((tag) => <Tag key={tag} text={tag} />)}
                         </div>
-                        
-                        <p className="mt-4 text-gray-600 dark:text-gray-300 line-clamp-3">
+
+                        <p className="mt-4 line-clamp-3 text-gray-600 dark:text-gray-300">
                           {summary}
                         </p>
-                        
+
                         <div className="mt-4">
                           <Link
                             href={`/${path}`}
-                            className="inline-flex items-center text-sm font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
+                            className="inline-flex items-center text-sm font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
                           >
                             Read more
-                            <ChevronRight className="h-4 w-4 ml-1" />
+                            <ChevronRight className="ml-1 h-4 w-4" />
                           </Link>
                         </div>
                       </div>
@@ -183,7 +191,7 @@ export default function ListLayoutWithTags({
                 )
               })}
             </div>
-            
+
             {pagination && pagination.totalPages > 1 && (
               <Pagination currentPage={pagination.currentPage} totalPages={pagination.totalPages} />
             )}

@@ -5,7 +5,6 @@ import { Tag, ArrowLeft, Globe, Github, Calendar, Users } from 'lucide-react'
 import { notFound } from 'next/navigation'
 import { projects } from '@/data/projectsData'
 
-
 const ProjectDetail = ({ params }) => {
   const project = projects.find((p) => p.slug === params.slug)
 
@@ -20,8 +19,8 @@ const ProjectDetail = ({ params }) => {
     <div className="min-h-screen bg-gray-50 py-12 dark:bg-gray-900">
       <div className="mx-auto max-w-6xl px-4">
         {/* Back button */}
-        <Link 
-          href="/projects" 
+        <Link
+          href="/projects"
           className="mb-8 inline-flex items-center text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
@@ -33,10 +32,8 @@ const ProjectDetail = ({ params }) => {
           <h1 className="mb-4 text-4xl font-bold text-gray-900 dark:text-gray-100">
             {project.title}
           </h1>
-          <p className="mb-6 text-xl text-gray-600 dark:text-gray-400">
-            {project.description}
-          </p>
-          
+          <p className="mb-6 text-xl text-gray-600 dark:text-gray-400">{project.description}</p>
+
           {/* Quick info */}
           <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
             <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
@@ -49,7 +46,7 @@ const ProjectDetail = ({ params }) => {
             </div>
             <div className="flex items-center space-x-2">
               {project.liveUrl && (
-                <Link 
+                <Link
                   href={project.liveUrl}
                   className="flex items-center text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
                 >
@@ -60,7 +57,7 @@ const ProjectDetail = ({ params }) => {
             </div>
             <div className="flex items-center space-x-2">
               {project.githubUrl && (
-                <Link 
+                <Link
                   href={project.githubUrl}
                   className="flex items-center text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100"
                 >
@@ -98,7 +95,9 @@ const ProjectDetail = ({ params }) => {
         </div>
 
         {/* Project details with conditional layout */}
-        <div className={`mb-12 grid grid-cols-1 gap-12 ${hasScreenshots ? 'lg:grid-cols-3' : 'lg:grid-cols-2'}`}>
+        <div
+          className={`mb-12 grid grid-cols-1 gap-12 ${hasScreenshots ? 'lg:grid-cols-3' : 'lg:grid-cols-2'}`}
+        >
           {/* Main content */}
           <div className={hasScreenshots ? 'lg:col-span-2' : 'lg:col-span-full'}>
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
@@ -155,9 +154,7 @@ const ProjectDetail = ({ params }) => {
           {/* Screenshots sidebar - only render if there are screenshots */}
           {hasScreenshots && (
             <div className="space-y-4">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                Screenshots
-              </h2>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Screenshots</h2>
               {project.screenshots.map((screenshot, index) => (
                 <div key={index} className="overflow-hidden rounded-lg shadow-lg">
                   <Image

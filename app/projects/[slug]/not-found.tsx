@@ -37,8 +37,8 @@ const NotFound = () => {
             Oops! This project seems to be missing.
           </h2>
           <p className="mx-auto max-w-md text-gray-600 dark:text-gray-400">
-            The project you're looking for might have been moved, renamed, or doesn't exist. 
-            Don't worry though, you can explore our other amazing projects!
+            The project you're looking for might have been moved, renamed, or doesn't exist. Don't
+            worry though, you can explore our other amazing projects!
           </p>
         </motion.div>
 
@@ -57,7 +57,7 @@ const NotFound = () => {
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Projects
           </Link>
-          
+
           <Link
             href="/"
             className="inline-flex items-center rounded-lg border border-gray-300 bg-white px-6 py-3 
@@ -78,10 +78,7 @@ const NotFound = () => {
         >
           <p>
             If you believe this is a mistake, please{' '}
-            <Link 
-              href="/contact" 
-              className="text-blue-600 hover:underline dark:text-blue-400"
-            >
+            <Link href="/contact" className="text-blue-600 hover:underline dark:text-blue-400">
               contact us
             </Link>
             .

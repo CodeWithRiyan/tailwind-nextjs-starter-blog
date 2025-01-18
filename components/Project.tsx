@@ -58,8 +58,10 @@ const ProjectSection: React.FC<ProjectSectionProps> = ({ isMain = false }) => {
                   className="object-cover transition-transform duration-500 group-hover:scale-105"
                 />
                 {project.featured && (
-                  <div className="absolute right-4 top-4 z-10 flex items-center space-x-1 rounded-full 
-                    bg-blue-500 px-3 py-1 text-sm text-white">
+                  <div
+                    className="absolute right-4 top-4 z-10 flex items-center space-x-1 rounded-full 
+                    bg-blue-500 px-3 py-1 text-sm text-white"
+                  >
                     <Sparkles className="h-4 w-4" />
                     <span>Featured</span>
                   </div>
@@ -67,8 +69,10 @@ const ProjectSection: React.FC<ProjectSectionProps> = ({ isMain = false }) => {
               </div>
 
               <div className="p-6">
-                <h3 className="mb-2 text-xl font-bold text-gray-900 transition-colors duration-300 
-                  group-hover:text-blue-500 dark:text-gray-100">
+                <h3
+                  className="mb-2 text-xl font-bold text-gray-900 transition-colors duration-300 
+                  group-hover:text-blue-500 dark:text-gray-100"
+                >
                   {project.title}
                 </h3>
                 <p className="mb-4 text-gray-600 dark:text-gray-400">{project.description}</p>

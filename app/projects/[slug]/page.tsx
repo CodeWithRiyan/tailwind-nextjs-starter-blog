@@ -1,12 +1,12 @@
 import { genPageMetadata } from 'app/seo'
 import ProjectDetail from '@/components/ProjectDetail'
-import { projects } from '@/data/projectsData'  // We'll create this file next
+import { projects } from '@/data/projectsData' // We'll create this file next
 
 export const generateMetadata = ({ params }) => {
   const project = projects.find((p) => p.slug === params.slug)
   return genPageMetadata({
     title: project?.title || 'Project Not Found',
-    description: project?.description
+    description: project?.description,
   })
 }
 
