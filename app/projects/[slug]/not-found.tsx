@@ -1,12 +1,12 @@
-// app/not-found.tsx
+// app/projects/[slug]/not-found.tsx
 'use client'
 
 import React from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Search, Home, AlertCircle } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { ArrowLeft, Home, AlertCircle } from 'lucide-react'
+import { motion } from 'framer-motion' // Note: You'll need to install framer-motion
 
-const GlobalNotFound = () => {
+const NotFound = () => {
   return (
     <div className="flex min-h-[80vh] items-center justify-center bg-gray-50 px-4 dark:bg-gray-900">
       <div className="w-full max-w-3xl text-center">
@@ -22,7 +22,7 @@ const GlobalNotFound = () => {
           </h1>
           <div className="flex items-center justify-center space-x-2 text-gray-500 dark:text-gray-400">
             <AlertCircle className="h-5 w-5" />
-            <p className="text-xl">Page Not Found</p>
+            <p className="text-xl">Project Not Found</p>
           </div>
         </motion.div>
 
@@ -34,11 +34,11 @@ const GlobalNotFound = () => {
           className="mb-12 space-y-4"
         >
           <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200">
-            Looks like you've ventured into unknown territory!
+            Oops! This project seems to be missing.
           </h2>
           <p className="mx-auto max-w-md text-gray-600 dark:text-gray-400">
-            The page you're looking for doesn't exist or has been moved. 
-            Don't worry though, you can find lots of other interesting content on our site.
+            The project you're looking for might have been moved, renamed, or doesn't exist. 
+            Don't worry though, you can explore our other amazing projects!
           </p>
         </motion.div>
 
@@ -50,22 +50,22 @@ const GlobalNotFound = () => {
           className="flex flex-col items-center justify-center space-y-4 sm:flex-row sm:space-x-4 sm:space-y-0"
         >
           <Link
-            href="/"
+            href="/projects"
             className="inline-flex items-center rounded-lg bg-blue-600 px-6 py-3 text-white 
               transition-colors duration-300 hover:bg-blue-700 dark:hover:bg-blue-500"
           >
-            <Home className="mr-2 h-4 w-4" />
-            Back to Home
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Projects
           </Link>
           
           <Link
-            href="/projects"
+            href="/"
             className="inline-flex items-center rounded-lg border border-gray-300 bg-white px-6 py-3 
               text-gray-700 transition-colors duration-300 hover:bg-gray-50 dark:border-gray-600 
               dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
           >
-            <Search className="mr-2 h-4 w-4" />
-            Browse Projects
+            <Home className="mr-2 h-4 w-4" />
+            Go Home
           </Link>
         </motion.div>
 
@@ -77,12 +77,12 @@ const GlobalNotFound = () => {
           className="mt-12 text-sm text-gray-500 dark:text-gray-400"
         >
           <p>
-            Need help finding something specific?{' '}
+            If you believe this is a mistake, please{' '}
             <Link 
               href="/contact" 
               className="text-blue-600 hover:underline dark:text-blue-400"
             >
-              Contact us
+              contact us
             </Link>
             .
           </p>
@@ -92,4 +92,4 @@ const GlobalNotFound = () => {
   )
 }
 
-export default GlobalNotFound
+export default NotFound

@@ -1,18 +1,13 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import Link from '@/components/Link'
-import Tag from '@/components/Tag'
 import ClientSideContent from '@/components/Hero'
 import Technology from '@/components/Technology'
 import siteMetadata from '@/data/siteMetadata'
-import { formatDate } from 'pliny/utils/formatDate'
 import ProjectSection from '@/components/Project'
 import TestimonialsSection from '@/components/Testimonials'
 
-const MAX_DISPLAY = 5
-
-const Home = ({ posts }) => {
+const Home = () => {
   const [isVisible, setIsVisible] = useState(false)
 
   useEffect(() => {

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 import siteMetadata from '@/data/siteMetadata'
 import headerNavLinks from '@/data/headerNavLinks'
 import NextImage from 'next/image'
@@ -15,6 +16,7 @@ import { useTheme } from 'next-themes'
 const Header = () => {
   const { theme } = useTheme()
   const [mounted, setMounted] = useState(false)
+  const pathname = usePathname()
 
   useEffect(() => {
     setMounted(true)
@@ -34,8 +36,15 @@ const Header = () => {
     )
   ) : (
     // Render a transparent placeholder during SSR to maintain layout
-    <div className="h-[50px] w-[280px]" /> // Adjust height based on your logo's aspect ratio
+    <div className="h-12 w-72" />
   )
+
+  const isActiveLink = (href) => {
+    if (href === '/') {
+      return pathname === href
+    }
+    return pathname.startsWith(href)
+  }
 
   return (
     <header className={headerClass}>
@@ -52,7 +61,11 @@ const Header = () => {
               <Link
                 key={link.title}
                 href={link.href}
-                className="block font-medium text-gray-900 hover:text-primary-500 dark:text-gray-100 dark:hover:text-primary-400"
+                className={`block font-medium transition-colors duration-200 ${
+                  isActiveLink(link.href)
+                    ? 'text-primary-500 dark:text-primary-400'
+                    : 'text-gray-900 hover:text-primary-500 dark:text-gray-100 dark:hover:text-primary-400'
+                }`}
               >
                 {link.title}
               </Link>
