@@ -10,6 +10,7 @@ import Tag from '@/components/Tag'
 import siteMetadata from '@/data/siteMetadata'
 import tagData from 'app/tag-data.json'
 import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react'
+import TagList from '@/components/TagList'
 
 interface PaginationProps {
   totalPages: number
@@ -119,25 +120,8 @@ export default function ListLayoutWithTags({
                       All Posts
                     </Link>
                   )}
-                  <div className="mt-4 space-y-3">
-                    {sortedTags.map((t) => {
-                      return (
-                        <div key={t}>
-                          {decodeURI(pathname.split('/tags/')[1]) === slug(t) ? (
-                            <span className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-primary-600 dark:text-primary-400">
-                              {`${t} (${tagCounts[t]})`}
-                            </span>
-                          ) : (
-                            <Link
-                              href={`/tags/${slug(t)}`}
-                              className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-600 transition duration-150 ease-in-out hover:text-primary-600 dark:text-gray-300 dark:hover:text-primary-400"
-                            >
-                              {`${t} (${tagCounts[t]})`}
-                            </Link>
-                          )}
-                        </div>
-                      )
-                    })}
+                  <div className="mt-4">
+                    <TagList tags={sortedTags} counts={tagCounts} />
                   </div>
                 </div>
               </div>
