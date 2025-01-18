@@ -21,10 +21,10 @@ const Footer = () => {
       { name: 'Contact', href: '/contact' },
     ],
     services: [
-      { name: 'Web Development', href: '#' },
-      { name: 'Mobile Development', href: '#' },
-      { name: 'UI/UX Design', href: '#' },
-      { name: 'API Development', href: '#' },
+      { name: 'Web Development', href: '/about' },
+      { name: 'Mobile Development', href: 'about' },
+      { name: 'UI/UX Design', href: '/about' },
+      { name: 'API Development', href: '/about' },
     ],
     social: [
       {
@@ -128,7 +128,7 @@ const Footer = () => {
               </li>
               <li>
                 <a
-                  href="tel:+1234567890"
+                  href="tel:+6285713082841"
                   className="flex items-center text-sm text-gray-600 transition-colors 
                     duration-300 hover:text-primary-500 dark:text-gray-400 dark:hover:text-primary-400"
                 >

@@ -1,0 +1,810 @@
+---
+title: 'Building Modern Web Applications with Angular, TypeScript, and Bootstrap'
+date: '2025-01-18'
+lastmod: '2025-01-18'
+tags: ['angular', 'typescript', 'bootstrap', 'frontend', 'web-development']
+draft: false
+summary: 'A comprehensive guide to developing scalable web applications using Angular with TypeScript and Bootstrap. Learn about component architecture, state management, styling, and best practices.'
+images: ['/static/images/angular-typescript.png']
+---
+
+## Introduction
+
+Angular continues to be a powerful framework for building enterprise-level applications, combining the robustness of TypeScript with a comprehensive ecosystem. In this guide, we'll explore how to build modern web applications using Angular, TypeScript, and Bootstrap, following best practices and patterns.
+
+## Project Setup
+
+First, let's set up a new Angular project with Bootstrap integration:
+
+```bash
+# Install Angular CLI globally
+npm install -g @angular/cli
+
+# Create new Angular project
+ng new angular-bootstrap-app
+cd angular-bootstrap-app
+
+# Add Bootstrap
+npm install bootstrap @ng-bootstrap/ng-bootstrap
+```
+
+### Configure Angular with Bootstrap
+
+Update your `angular.json` to include Bootstrap styles:
+
+```json
+{
+  "projects": {
+    "angular-bootstrap-app": {
+      "architect": {
+        "build": {
+          "options": {
+            "styles": [
+              "node_modules/bootstrap/scss/bootstrap.scss",
+              "src/styles.scss"
+            ],
+            "scripts": [
+              "node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"
+            ]
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+## TypeScript Configuration
+
+### Strong Typing Setup
+
+```typescript
+// src/app/types/index.ts
+export interface User {
+  id: string;
+  username: string;
+  email: string;
+  profile: UserProfile;
+  roles: UserRole[];
+}
+
+export interface UserProfile {
+  firstName: string;
+  lastName: string;
+  avatar?: string;
+  bio?: string;
+  dateOfBirth?: Date;
+}
+
+export type UserRole = 'admin' | 'user' | 'moderator';
+
+export interface ApiResponse<T> {
+  data: T;
+  message: string;
+  status: number;
+}
+
+// Generic type guard
+export function isApiResponse<T>(obj: any): obj is ApiResponse<T> {
+  return 'data' in obj && 'message' in obj && 'status' in obj;
+}
+```
+
+## Angular Components with TypeScript
+
+### Smart Component Example
+
+```typescript
+// src/app/components/user-dashboard/user-dashboard.component.ts
+import { Component, OnInit } from '@angular/core';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
+import { User } from '../../types';
+import { UserService } from '../../services/user.service';
+
+@Component({
+  selector: 'app-user-dashboard',
+  template: `
+    <div class="container mt-4">
+      <div class="row">
+        <div class="col-md-4">
+          <app-user-profile 
+            [user]="user$ | async"
+            (updateProfile)="handleProfileUpdate($event)"
+          ></app-user-profile>
+        </div>
+        <div class="col-md-8">
+          <app-user-activity 
+            [activities]="activities$ | async"
+          ></app-user-activity>
+        </div>
+      </div>
+    </div>
+  `
+})
+export class UserDashboardComponent implements OnInit {
+  user$: Observable<User>;
+  activities$: Observable<Activity[]>;
+
+  constructor(private userService: UserService) {}
+
+  ngOnInit(): void {
+    this.user$ = this.userService.getCurrentUser();
+    this.activities$ = this.userService.getUserActivities();
+  }
+
+  handleProfileUpdate(updatedProfile: Partial<UserProfile>): void {
+    this.userService.updateProfile(updatedProfile).subscribe({
+      next: (response) => {
+        console.log('Profile updated successfully', response);
+      },
+      error: (error) => {
+        console.error('Error updating profile', error);
+      }
+    });
+  }
+}
+```
+
+### Presentational Component
+
+```typescript
+// src/app/components/user-profile/user-profile.component.ts
+import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
+import { User, UserProfile } from '../../types';
+
+@Component({
+  selector: 'app-user-profile',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <div class="card">
+      <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Profile Information</h5>
+      </div>
+      <div class="card-body">
+        <div class="text-center mb-3">
+          <img 
+            [src]="user?.profile?.avatar || 'assets/default-avatar.png'"
+            class="rounded-circle"
+            alt="Profile Avatar"
+            width="100"
+          >
+        </div>
+        <form #profileForm="ngForm" (ngSubmit)="onSubmit()">
+          <div class="mb-3">
+            <label class="form-label">First Name</label>
+            <input
+              type="text"
+              class="form-control"
+              [(ngModel)]="editableProfile.firstName"
+              name="firstName"
+              required
+            >
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Last Name</label>
+            <input
+              type="text"
+              class="form-control"
+              [(ngModel)]="editableProfile.lastName"
+              name="lastName"
+              required
+            >
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Bio</label>
+            <textarea
+              class="form-control"
+              [(ngModel)]="editableProfile.bio"
+              name="bio"
+              rows="3"
+            ></textarea>
+          </div>
+          <button 
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="!profileForm.valid"
+          >
+            Update Profile
+          </button>
+        </form>
+      </div>
+    </div>
+  `
+})
+export class UserProfileComponent {
+  @Input() user: User | null = null;
+  @Output() updateProfile = new EventEmitter<Partial<UserProfile>>();
+
+  editableProfile: Partial<UserProfile> = {};
+
+  ngOnChanges(): void {
+    if (this.user) {
+      this.editableProfile = { ...this.user.profile };
+    }
+  }
+
+  onSubmit(): void {
+    this.updateProfile.emit(this.editableProfile);
+  }
+}
+```
+
+## Services and Dependency Injection
+
+### HTTP Service
+
+```typescript
+// src/app/services/api.service.ts
+import { Injectable } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
+import { environment } from '../../environments/environment';
+import { ApiResponse } from '../types';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class ApiService {
+  private baseUrl = environment.apiUrl;
+
+  constructor(private http: HttpClient) {}
+
+  get<T>(endpoint: string, params?: Record<string, string>): Observable<T> {
+    let httpParams = new HttpParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        httpParams = httpParams.append(key, value);
+      });
+    }
+
+    return this.http.get<ApiResponse<T>>(`${this.baseUrl}/${endpoint}`, { params: httpParams })
+      .pipe(
+        map(response => {
+          if (!isApiResponse<T>(response)) {
+            throw new Error('Invalid API response format');
+          }
+          return response.data;
+        }),
+        catchError(this.handleError)
+      );
+  }
+
+  private handleError(error: any): Observable<never> {
+    console.error('API Error:', error);
+    throw error;
+  }
+}
+```
+
+## State Management with NgRx
+
+### Store Configuration
+
+```typescript
+// src/app/store/user/user.state.ts
+import { User } from '../../types';
+
+export interface UserState {
+  currentUser: User | null;
+  loading: boolean;
+  error: string | null;
+}
+
+export const initialUserState: UserState = {
+  currentUser: null,
+  loading: false,
+  error: null
+};
+
+// src/app/store/user/user.actions.ts
+import { createAction, props } from '@ngrx/store';
+import { User } from '../../types';
+
+export const loadUser = createAction('[User] Load User');
+export const loadUserSuccess = createAction(
+  '[User] Load User Success',
+  props<{ user: User }>()
+);
+export const loadUserFailure = createAction(
+  '[User] Load User Failure',
+  props<{ error: string }>()
+);
+
+// src/app/store/user/user.reducer.ts
+import { createReducer, on } from '@ngrx/store';
+import * as UserActions from './user.actions';
+import { UserState, initialUserState } from './user.state';
+
+export const userReducer = createReducer(
+  initialUserState,
+  on(UserActions.loadUser, state => ({
+    ...state,
+    loading: true
+  })),
+  on(UserActions.loadUserSuccess, (state, { user }) => ({
+    ...state,
+    currentUser: user,
+    loading: false,
+    error: null
+  })),
+  on(UserActions.loadUserFailure, (state, { error }) => ({
+    ...state,
+    loading: false,
+    error
+  }))
+);
+```
+
+## Custom Bootstrap Theming
+
+### SCSS Configuration
+
+```scss
+// src/styles/_variables.scss
+$primary: #2196f3;
+$secondary: #607d8b;
+$success: #4caf50;
+$info: #00bcd4;
+$warning: #ff9800;
+$danger: #f44336;
+
+$theme-colors: (
+  "primary": $primary,
+  "secondary": $secondary,
+  "success": $success,
+  "info": $info,
+  "warning": $warning,
+  "danger": $danger
+);
+
+$enable-rounded: true;
+$enable-shadows: true;
+$enable-gradients: false;
+
+// src/styles.scss
+@import "styles/variables";
+@import "~bootstrap/scss/bootstrap";
+
+// Custom utility classes
+.shadow-hover {
+  transition: box-shadow 0.3s ease-in-out;
+  
+  &:hover {
+    box-shadow: 0 .5rem 1rem rgba(0,0,0,.15);
+  }
+}
+
+.bg-gradient-primary {
+  background: linear-gradient(45deg, $primary, lighten($primary, 20%));
+}
+```
+
+## Forms and Validation
+
+### Reactive Forms Example
+
+```typescript
+// src/app/components/registration/registration.component.ts
+import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { passwordMatchValidator } from '../../validators/password-match.validator';
+
+@Component({
+  selector: 'app-registration',
+  template: `
+    <div class="container mt-5">
+      <div class="row justify-content-center">
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-body">
+              <h3 class="card-title text-center mb-4">Register</h3>
+              <form [formGroup]="registrationForm" (ngSubmit)="onSubmit()">
+                <div class="mb-3">
+                  <label class="form-label">Email</label>
+                  <input
+                    type="email"
+                    class="form-control"
+                    formControlName="email"
+                    [ngClass]="{
+                      'is-invalid': email.invalid && (email.dirty || email.touched)
+                    }"
+                  >
+                  <div class="invalid-feedback" *ngIf="email.errors?.required">
+                    Email is required
+                  </div>
+                  <div class="invalid-feedback" *ngIf="email.errors?.email">
+                    Please enter a valid email
+                  </div>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label">Password</label>
+                  <input
+                    type="password"
+                    class="form-control"
+                    formControlName="password"
+                    [ngClass]="{
+                      'is-invalid': password.invalid && (password.dirty || password.touched)
+                    }"
+                  >
+                  <div class="invalid-feedback" *ngIf="password.errors?.required">
+                    Password is required
+                  </div>
+                  <div class="invalid-feedback" *ngIf="password.errors?.minlength">
+                    Password must be at least 8 characters
+                  </div>
+                </div>
+
+                <div class="mb-3">
+                  <label class="form-label">Confirm Password</label>
+                  <input
+                    type="password"
+                    class="form-control"
+                    formControlName="confirmPassword"
+                    [ngClass]="{
+                      'is-invalid': registrationForm.errors?.passwordMismatch
+                    }"
+                  >
+                  <div class="invalid-feedback" *ngIf="registrationForm.errors?.passwordMismatch">
+                    Passwords do not match
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  class="btn btn-primary w-100"
+                  [disabled]="registrationForm.invalid"
+                >
+                  Register
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `
+})
+export class RegistrationComponent implements OnInit {
+  registrationForm: FormGroup;
+
+  constructor(private fb: FormBuilder) {}
+
+  ngOnInit(): void {
+    this.registrationForm = this.fb.group({
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', [Validators.required, Validators.minLength(8)]],
+      confirmPassword: ['', Validators.required]
+    }, {
+      validators: passwordMatchValidator
+    });
+  }
+
+  get email() { return this.registrationForm.get('email'); }
+  get password() { return this.registrationForm.get('password'); }
+
+  onSubmit(): void {
+    if (this.registrationForm.valid) {
+      console.log('Form submitted', this.registrationForm.value);
+      // Handle form submission
+    }
+  }
+}
+```
+
+## Testing
+
+### Component Testing
+
+```typescript
+// src/app/components/user-profile/user-profile.component.spec.ts
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { FormsModule } from '@angular/forms';
+import { UserProfileComponent } from './user-profile.component';
+
+describe('UserProfileComponent', () => {
+  let component: UserProfileComponent;
+  let fixture: ComponentFixture<UserProfileComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      declarations: [ UserProfileComponent ],
+      imports: [ FormsModule ]
+    })
+    .compileComponents();
+  });
+
+  beforeEach(() => {
+    fixture = TestBed.createComponent(UserProfileComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+
+  it('should emit profile update event', () => {
+    const mockProfile = {
+      firstName: 'John',
+      lastName: 'Doe',
+      bio: 'Test bio'
+    };
+    
+    spyOn(component.updateProfile, 'emit');
+    component.editableProfile = mockProfile;
+    component.onSubmit();
+    
+    expect(component.updateProfile.emit).toHaveBeenCalledWith(mockProfile);
+  });
+
+  it('should update editable profile when user input changes', () => {
+    const mockUser = {
+      id: '1',
+      username: 'johndoe',
+      email: 'john@example.com',
+      profile: {
+        firstName: 'John',
+        lastName: 'Doe',
+        bio: 'Test bio'
+      },
+      roles: ['user']
+    };
+
+    component.user = mockUser;
+    component.ngOnChanges();
+
+    expect(component.editableProfile).toEqual(mockUser.profile);
+  });
+});
+
+// src/app/services/user.service.spec.ts
+import { TestBed } from '@angular/core/testing';
+import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { UserService } from './user.service';
+import { environment } from '../../environments/environment';
+
+describe('UserService', () => {
+  let service: UserService;
+  let httpMock: HttpTestingController;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      imports: [HttpClientTestingModule],
+      providers: [UserService]
+    });
+
+    service = TestBed.inject(UserService);
+    httpMock = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => {
+    httpMock.verify();
+  });
+
+  it('should fetch current user', () => {
+    const mockUser = {
+      id: '1',
+      username: 'testuser',
+      email: 'test@example.com',
+      profile: {
+        firstName: 'Test',
+        lastName: 'User'
+      },
+      roles: ['user']
+    };
+
+    service.getCurrentUser().subscribe(user => {
+      expect(user).toEqual(mockUser);
+    });
+
+    const req = httpMock.expectOne(`${environment.apiUrl}/users/me`);
+    expect(req.request.method).toBe('GET');
+    req.flush({ data: mockUser, status: 200, message: 'Success' });
+  });
+});
+```
+
+## Performance Optimization
+
+### Lazy Loading Implementation
+
+```typescript
+// src/app/app-routing.module.ts
+import { NgModule } from '@angular/core';
+import { RouterModule, Routes } from '@angular/router';
+import { AuthGuard } from './guards/auth.guard';
+
+const routes: Routes = [
+  {
+    path: 'dashboard',
+    loadChildren: () => import('./modules/dashboard/dashboard.module')
+      .then(m => m.DashboardModule),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'admin',
+    loadChildren: () => import('./modules/admin/admin.module')
+      .then(m => m.AdminModule),
+    canActivate: [AuthGuard]
+  }
+];
+
+@NgModule({
+  imports: [RouterModule.forRoot(routes)],
+  exports: [RouterModule]
+})
+export class AppRoutingModule { }
+```
+
+### Performance Monitoring Service
+
+```typescript
+// src/app/services/performance.service.ts
+import { Injectable } from '@angular/core';
+import { NavigationEnd, Router } from '@angular/router';
+import { filter } from 'rxjs/operators';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class PerformanceService {
+  private navigationStart: number = 0;
+
+  constructor(private router: Router) {
+    this.setupNavigationTiming();
+  }
+
+  private setupNavigationTiming(): void {
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd)
+    ).subscribe(() => {
+      const timing = window.performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
+      const pageLoadTime = timing.loadEventEnd - timing.navigationStart;
+      
+      console.log(`Page Load Time: ${pageLoadTime}ms`);
+      this.sendMetricsToAnalytics({
+        pageLoadTime,
+        domContentLoaded: timing.domContentLoadedEventEnd - timing.navigationStart,
+        firstContentfulPaint: this.getFCP()
+      });
+    });
+  }
+
+  private getFCP(): number {
+    const paintMetrics = performance.getEntriesByType('paint');
+    const fcpEntry = paintMetrics.find(entry => entry.name === 'first-contentful-paint');
+    return fcpEntry ? fcpEntry.startTime : 0;
+  }
+
+  private sendMetricsToAnalytics(metrics: any): void {
+    // Implementation for sending metrics to analytics service
+    console.log('Performance Metrics:', metrics);
+  }
+}
+```
+
+## Error Handling
+
+### Global Error Handler
+
+```typescript
+// src/app/error-handling/global-error-handler.ts
+import { ErrorHandler, Injectable, NgZone } from '@angular/core';
+import { ToastrService } from 'ngx-toastr';
+
+@Injectable()
+export class GlobalErrorHandler implements ErrorHandler {
+  constructor(
+    private zone: NgZone,
+    private toastr: ToastrService
+  ) {}
+
+  handleError(error: any): void {
+    this.zone.run(() => {
+      console.error('An error occurred:', error);
+
+      let message = 'An unexpected error occurred.';
+      if (error.status === 404) {
+        message = 'Resource not found.';
+      } else if (error.status === 403) {
+        message = 'You are not authorized to perform this action.';
+      } else if (error.status === 500) {
+        message = 'Server error. Please try again later.';
+      }
+
+      this.toastr.error(message, 'Error');
+    });
+  }
+}
+
+// src/app/app.module.ts
+@NgModule({
+  providers: [
+    { provide: ErrorHandler, useClass: GlobalErrorHandler }
+  ]
+})
+export class AppModule { }
+```
+
+## Security Considerations
+
+### HTTP Interceptor for Authentication
+
+```typescript
+// src/app/interceptors/auth.interceptor.ts
+import { Injectable } from '@angular/core';
+import { HttpInterceptor, HttpRequest, HttpHandler, HttpEvent } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { AuthService } from '../services/auth.service';
+
+@Injectable()
+export class AuthInterceptor implements HttpInterceptor {
+  constructor(private authService: AuthService) {}
+
+  intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+    const token = this.authService.getToken();
+
+    if (token) {
+      request = request.clone({
+        setHeaders: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+    }
+
+    return next.handle(request);
+  }
+}
+```
+
+## Best Practices and Guidelines
+
+1. **Project Structure**
+   - Follow feature-based modular architecture
+   - Implement lazy loading for better performance
+   - Use barrel files for clean imports
+
+2. **Component Design**
+   - Keep components small and focused
+   - Use smart/presentational component pattern
+   - Implement proper change detection strategies
+
+3. **State Management**
+   - Use NgRx for complex state management
+   - Implement proper actions and reducers
+   - Follow immutability principles
+
+4. **Performance**
+   - Use OnPush change detection
+   - Implement lazy loading
+   - Optimize bundle size
+   - Monitor performance metrics
+
+5. **Testing**
+   - Write unit tests for services and components
+   - Implement e2e tests for critical paths
+   - Use proper mocking strategies
+
+6. **Security**
+   - Implement proper authentication
+   - Use HTTP interceptors
+   - Follow security best practices
+
+Remember to:
+- Keep dependencies updated
+- Follow Angular style guide
+- Implement proper error handling
+- Monitor application performance
+- Document code and features
+
+## Resources
+
+- [Angular Documentation](https://angular.io/docs)
+- [TypeScript Documentation](https://www.typescriptlang.org/docs)
+- [Bootstrap Documentation](https://getbootstrap.com/docs)
+- [NgRx Documentation](https://ngrx.io/docs)
+
+Happy coding!

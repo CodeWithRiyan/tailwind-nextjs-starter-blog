@@ -1,0 +1,395 @@
+---
+title: 'Building a GraphQL API with Node.js and Express'
+date: '2025-01-18'
+lastmod: '2025-01-18'
+tags: ['nodejs', 'express', 'graphql', 'api', 'backend']
+draft: false
+summary: 'Learn how to build a modern GraphQL API using Node.js and Express. This guide covers schema design, resolvers, authentication, and best practices for creating scalable GraphQL servers.'
+images: ['/static/images/graphql-node.png']
+---
+
+## Introduction
+
+GraphQL has revolutionized how we think about API design and data fetching. In this comprehensive guide, we'll explore how to build a robust GraphQL API using Node.js and Express. We'll cover everything from basic setup to advanced patterns and best practices.
+
+## Setting Up the Project
+
+First, let's set up our Node.js project with the necessary dependencies:
+
+```bash
+mkdir graphql-express-api
+cd graphql-express-api
+npm init -y
+npm install express graphql express-graphql @graphql-tools/schema
+npm install --save-dev typescript ts-node @types/node @types/express
+```
+
+Create a basic TypeScript configuration:
+
+```json
+{
+  "compilerOptions": {
+    "target": "es2020",
+    "module": "commonjs",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "outDir": "./dist"
+  },
+  "include": ["src/**/*"]
+}
+```
+
+## Basic Server Setup
+
+Let's create our Express server with GraphQL middleware:
+
+```typescript
+import express from 'express';
+import { graphqlHTTP } from 'express-graphql';
+import { makeExecutableSchema } from '@graphql-tools/schema';
+
+const app = express();
+const port = process.env.PORT || 4000;
+
+// Basic type definitions
+const typeDefs = `
+  type Query {
+    hello: String
+  }
+`;
+
+// Resolver functions
+const resolvers = {
+  Query: {
+    hello: () => 'Hello, GraphQL World!'
+  }
+};
+
+const schema = makeExecutableSchema({ typeDefs, resolvers });
+
+app.use(
+  '/graphql',
+  graphqlHTTP({
+    schema,
+    graphiql: true // Enable GraphiQL interface for testing
+  })
+);
+
+app.listen(port, () => {
+  console.log(`Server running at http://localhost:${port}/graphql`);
+});
+```
+
+## Designing the Schema
+
+Let's create a more complex schema for a book library API:
+
+```typescript
+const typeDefs = `
+  type Book {
+    id: ID!
+    title: String!
+    author: Author!
+    publishedYear: Int
+    genres: [String!]!
+  }
+
+  type Author {
+    id: ID!
+    name: String!
+    books: [Book!]!
+    bio: String
+  }
+
+  type Query {
+    books: [Book!]!
+    book(id: ID!): Book
+    authors: [Author!]!
+    author(id: ID!): Author
+  }
+
+  type Mutation {
+    addBook(
+      title: String!
+      authorId: ID!
+      publishedYear: Int
+      genres: [String!]!
+    ): Book!
+    
+    updateBook(
+      id: ID!
+      title: String
+      publishedYear: Int
+      genres: [String!]
+    ): Book!
+    
+    deleteBook(id: ID!): Boolean!
+  }
+`;
+```
+
+## Implementing Resolvers
+
+Here's how we can implement resolvers with proper data handling:
+
+```typescript
+interface Book {
+  id: string;
+  title: string;
+  authorId: string;
+  publishedYear?: number;
+  genres: string[];
+}
+
+interface Author {
+  id: string;
+  name: string;
+  bio?: string;
+}
+
+// Mock database
+const books: Book[] = [];
+const authors: Author[] = [];
+
+const resolvers = {
+  Query: {
+    books: () => books,
+    book: (_, { id }: { id: string }) => 
+      books.find(book => book.id === id),
+    authors: () => authors,
+    author: (_, { id }: { id: string }) => 
+      authors.find(author => author.id === id)
+  },
+
+  Book: {
+    author: (parent: Book) => 
+      authors.find(author => author.id === parent.authorId)
+  },
+
+  Author: {
+    books: (parent: Author) => 
+      books.filter(book => book.authorId === parent.id)
+  },
+
+  Mutation: {
+    addBook: (_, args: {
+      title: string;
+      authorId: string;
+      publishedYear?: number;
+      genres: string[];
+    }) => {
+      const book: Book = {
+        id: Date.now().toString(),
+        ...args
+      };
+      books.push(book);
+      return book;
+    },
+
+    updateBook: (_, args: {
+      id: string;
+      title?: string;
+      publishedYear?: number;
+      genres?: string[];
+    }) => {
+      const index = books.findIndex(book => book.id === args.id);
+      if (index === -1) throw new Error('Book not found');
+
+      const updatedBook = {
+        ...books[index],
+        ...args
+      };
+      books[index] = updatedBook;
+      return updatedBook;
+    },
+
+    deleteBook: (_, { id }: { id: string }) => {
+      const index = books.findIndex(book => book.id === id);
+      if (index === -1) return false;
+      books.splice(index, 1);
+      return true;
+    }
+  }
+};
+```
+
+## Adding Authentication
+
+Let's implement JWT-based authentication:
+
+```typescript
+import jwt from 'jsonwebtoken';
+import { GraphQLError } from 'graphql';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+
+// Authentication middleware
+const authenticate = (req: express.Request) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) throw new GraphQLError('Authentication required');
+
+  try {
+    return jwt.verify(token, JWT_SECRET);
+  } catch (error) {
+    throw new GraphQLError('Invalid token');
+  }
+};
+
+// Update schema to include authentication
+const typeDefs = `
+  ${existingTypeDefs}
+
+  type User {
+    id: ID!
+    username: String!
+    email: String!
+  }
+
+  type AuthPayload {
+    token: String!
+    user: User!
+  }
+
+  extend type Mutation {
+    login(email: String!, password: String!): AuthPayload!
+    register(username: String!, email: String!, password: String!): AuthPayload!
+  }
+`;
+
+// Add authentication to resolvers
+const resolvers = {
+  ...existingResolvers,
+  Mutation: {
+    ...existingResolvers.Mutation,
+    addBook: (_, args, context) => {
+      const user = authenticate(context.req);
+      // Continue with adding book...
+    }
+  }
+};
+```
+
+## Error Handling
+
+Implement proper error handling for your GraphQL API:
+
+```typescript
+const errorHandler = (error: any) => {
+  console.error('GraphQL Error:', error);
+
+  if (error.originalError instanceof GraphQLError) {
+    return error;
+  }
+
+  return new GraphQLError('Internal server error', {
+    extensions: {
+      code: 'INTERNAL_SERVER_ERROR',
+      http: { status: 500 }
+    }
+  });
+};
+
+app.use(
+  '/graphql',
+  graphqlHTTP((req) => ({
+    schema,
+    graphiql: true,
+    context: { req },
+    customFormatErrorFn: errorHandler
+  }))
+);
+```
+
+## Performance Optimization
+
+### Implementing DataLoader
+
+To solve the N+1 query problem, let's implement DataLoader:
+
+```typescript
+import DataLoader from 'dataloader';
+
+const createLoaders = () => ({
+  authorLoader: new DataLoader(async (authorIds: string[]) => {
+    const authors = await Author.findByIds(authorIds);
+    return authorIds.map(id => 
+      authors.find(author => author.id === id)
+    );
+  }),
+  
+  bookLoader: new DataLoader(async (bookIds: string[]) => {
+    const books = await Book.findByIds(bookIds);
+    return bookIds.map(id => 
+      books.find(book => book.id === id)
+    );
+  })
+});
+
+// Update resolver to use DataLoader
+const resolvers = {
+  Book: {
+    author: async (parent: Book, _, { loaders }) => {
+      return loaders.authorLoader.load(parent.authorId);
+    }
+  }
+};
+```
+
+## Testing GraphQL APIs
+
+Here's an example of testing our GraphQL API using Jest:
+
+```typescript
+import { graphql } from 'graphql';
+import { schema } from './schema';
+
+describe('GraphQL API', () => {
+  it('should fetch books', async () => {
+    const query = `
+      query {
+        books {
+          id
+          title
+          author {
+            name
+          }
+        }
+      }
+    `;
+
+    const result = await graphql({
+      schema,
+      source: query,
+      contextValue: {
+        loaders: createLoaders()
+      }
+    });
+
+    expect(result.errors).toBeUndefined();
+    expect(result.data?.books).toBeDefined();
+  });
+});
+```
+
+## Conclusion
+
+Building a GraphQL API with Node.js and Express provides a flexible and powerful way to serve data to your applications. By following the patterns and practices outlined in this guide, you can create a robust, performant, and maintainable API that scales with your needs.
+
+Remember to:
+- Keep your schema design clean and intuitive
+- Implement proper authentication and authorization
+- Handle errors gracefully
+- Optimize performance with DataLoader
+- Write comprehensive tests
+- Monitor and log your API appropriately
+
+## Resources
+
+- [GraphQL Official Documentation](https://graphql.org/learn/)
+- [Express GraphQL](https://github.com/graphql/express-graphql)
+- [GraphQL Tools](https://www.graphql-tools.com/)
+- [DataLoader](https://github.com/graphql/dataloader)
+
+Happy coding!

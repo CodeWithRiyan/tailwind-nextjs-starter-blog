@@ -1,0 +1,817 @@
+---
+title: 'Modern Frontend Development with Vue 3, TypeScript, Tailwind CSS, and Styled Components'
+date: '2025-01-18'
+lastmod: '2025-01-18'
+tags: ['vue', 'typescript', 'tailwind', 'styled-components', 'frontend']
+draft: false
+summary: 'A comprehensive guide to building modern frontend applications using Vue 3 with TypeScript, combining the utility-first approach of Tailwind CSS with the power of Styled Components.'
+images: ['/static/images/modern-frontend.png']
+---
+
+## Introduction
+
+Modern frontend development has evolved to embrace type safety, component-based architecture, and flexible styling solutions. In this guide, we'll explore how to build robust applications using Vue 3 with TypeScript, while leveraging both Tailwind CSS and Styled Components for a powerful styling approach.
+
+## Project Setup
+
+First, let's create a new Vue 3 project with TypeScript support:
+
+```bash
+npm create vite@latest my-vue-app -- --template vue-ts
+cd my-vue-app
+npm install
+npm install tailwindcss postcss autoprefixer
+npm install vue-styled-components
+npx tailwindcss init -p
+```
+
+### Configure Tailwind CSS
+
+```typescript
+// tailwind.config.js
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: [
+    "./index.html",
+    "./src/**/*.{vue,js,ts,jsx,tsx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        primary: {
+          50: '#f8fafc',
+          100: '#f1f5f9',
+          // ... other shades
+          900: '#0f172a',
+        },
+        secondary: {
+          // Custom color palette
+          DEFAULT: '#7c3aed',
+          dark: '#5b21b6',
+        }
+      },
+      spacing: {
+        '18': '4.5rem',
+        '72': '18rem',
+      }
+    },
+  },
+  plugins: [],
+}
+```
+
+## TypeScript Configuration
+
+### Type Definitions
+
+```typescript
+// src/types/index.ts
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  preferences: UserPreferences;
+}
+
+export interface UserPreferences {
+  theme: 'light' | 'dark';
+  notifications: boolean;
+  language: string;
+}
+
+export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost';
+
+export interface ButtonProps {
+  variant: ButtonVariant;
+  size: 'sm' | 'md' | 'lg';
+  disabled?: boolean;
+  loading?: boolean;
+}
+```
+
+## Vue Components with TypeScript
+
+### Component Setup
+
+```typescript
+// src/components/Button.vue
+<script setup lang="ts">
+import { computed } from 'vue';
+import type { ButtonProps } from '@/types';
+import styled from 'vue-styled-components';
+
+const props = withDefaults(defineProps<ButtonProps>(), {
+  variant: 'primary',
+  size: 'md',
+  disabled: false,
+  loading: false
+});
+
+const StyledButton = styled('button', {
+  variant: String,
+  size: String
+})`
+  ${props => props.variant === 'primary' && `
+    background-color: ${props.theme.primary};
+    color: white;
+    &:hover {
+      background-color: ${props.theme.primaryDark};
+    }
+  `}
+
+  ${props => props.size === 'lg' && `
+    padding: 1rem 2rem;
+    font-size: 1.125rem;
+  `}
+`;
+
+const buttonClasses = computed(() => ({
+  'opacity-50 cursor-not-allowed': props.disabled,
+  'relative overflow-hidden': props.loading
+}));
+</script>
+
+<template>
+  <StyledButton
+    :variant="variant"
+    :size="size"
+    :class="buttonClasses"
+    :disabled="disabled || loading"
+  >
+    <slot v-if="!loading" />
+    <span v-else class="flex items-center justify-center">
+      <svg class="animate-spin h-5 w-5 mr-2" viewBox="0 0 24 24">
+        <!-- Loading spinner SVG -->
+      </svg>
+      Loading...
+    </span>
+  </StyledButton>
+</template>
+```
+
+### Composable Functions
+
+```typescript
+// src/composables/useTheme.ts
+import { ref, computed } from 'vue';
+import type { Ref } from 'vue';
+
+export function useTheme() {
+  const isDark: Ref<boolean> = ref(false);
+
+  const theme = computed(() => ({
+    primary: isDark.value ? '#1e293b' : '#3b82f6',
+    primaryDark: isDark.value ? '#0f172a' : '#2563eb',
+    background: isDark.value ? '#1a1a1a' : '#ffffff',
+    text: isDark.value ? '#ffffff' : '#1a1a1a',
+  }));
+
+  const toggleTheme = () => {
+    isDark.value = !isDark.value;
+  };
+
+  return {
+    isDark,
+    theme,
+    toggleTheme,
+  };
+}
+```
+
+## Combining Tailwind and Styled Components
+
+### Creating a Design System
+
+```typescript
+// src/styles/theme.ts
+export const theme = {
+  colors: {
+    primary: {
+      light: '#93c5fd',
+      DEFAULT: '#3b82f6',
+      dark: '#1d4ed8',
+    },
+    // ... other colors
+  },
+  spacing: {
+    xs: '0.25rem',
+    sm: '0.5rem',
+    md: '1rem',
+    lg: '1.5rem',
+    xl: '2rem',
+  },
+  breakpoints: {
+    sm: '640px',
+    md: '768px',
+    lg: '1024px',
+    xl: '1280px',
+  },
+};
+
+// src/styles/styled.d.ts
+import 'vue-styled-components';
+declare module 'vue-styled-components' {
+  export interface Theme {
+    colors: typeof theme.colors;
+    spacing: typeof theme.spacing;
+    breakpoints: typeof theme.breakpoints;
+  }
+}
+```
+
+### Component Implementation
+
+```typescript
+// src/components/Card.vue
+<script setup lang="ts">
+import styled from 'vue-styled-components';
+
+interface CardProps {
+  elevated?: boolean;
+  padding?: 'sm' | 'md' | 'lg';
+}
+
+const props = withDefaults(defineProps<CardProps>(), {
+  elevated: false,
+  padding: 'md'
+});
+
+const StyledCard = styled('div', {
+  elevated: Boolean,
+  padding: String
+})`
+  background-color: ${props => props.theme.colors.background};
+  border-radius: 0.5rem;
+  transition: all 0.2s ease-in-out;
+
+  ${props => props.elevated && `
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    &:hover {
+      box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+    }
+  `}
+
+  ${props => `padding: ${props.theme.spacing[props.padding]}`}
+`;
+</script>
+
+<template>
+  <StyledCard
+    :elevated="elevated"
+    :padding="padding"
+    class="border border-gray-200 dark:border-gray-700"
+  >
+    <slot />
+  </StyledCard>
+</template>
+```
+
+## Form Handling with TypeScript
+
+```typescript
+// src/components/Form.vue
+<script setup lang="ts">
+import { ref } from 'vue';
+import type { User } from '@/types';
+import styled from 'vue-styled-components';
+
+const StyledForm = styled.form`
+  display: flex;
+  flex-direction: column;
+  gap: ${props => props.theme.spacing.md};
+`;
+
+const StyledInput = styled.input`
+  border: 1px solid ${props => props.theme.colors.gray[300]};
+  border-radius: 0.375rem;
+  padding: ${props => props.theme.spacing.sm} ${props => props.theme.spacing.md};
+  
+  &:focus {
+    outline: none;
+    border-color: ${props => props.theme.colors.primary.DEFAULT};
+    box-shadow: 0 0 0 2px ${props => props.theme.colors.primary.light};
+  }
+`;
+
+interface FormData {
+  name: string;
+  email: string;
+  password: string;
+}
+
+const formData = ref<FormData>({
+  name: '',
+  email: '',
+  password: ''
+});
+
+const errors = ref<Partial<Record<keyof FormData, string>>>({});
+
+const validateForm = (): boolean => {
+  errors.value = {};
+  let isValid = true;
+
+  if (!formData.value.name) {
+    errors.value.name = 'Name is required';
+    isValid = false;
+  }
+
+  if (!formData.value.email) {
+    errors.value.email = 'Email is required';
+    isValid = false;
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.value.email)) {
+    errors.value.email = 'Invalid email format';
+    isValid = false;
+  }
+
+  if (!formData.value.password) {
+    errors.value.password = 'Password is required';
+    isValid = false;
+  } else if (formData.value.password.length < 8) {
+    errors.value.password = 'Password must be at least 8 characters';
+    isValid = false;
+  }
+
+  return isValid;
+};
+
+const handleSubmit = async (event: Event) => {
+  event.preventDefault();
+  if (validateForm()) {
+    // Handle form submission
+  }
+};
+</script>
+
+<template>
+  <StyledForm @submit="handleSubmit" class="max-w-md mx-auto">
+    <div class="space-y-2">
+      <label class="block text-sm font-medium text-gray-700">
+        Name
+      </label>
+      <StyledInput
+        v-model="formData.name"
+        type="text"
+        :class="{'border-red-500': errors.name}"
+      />
+      <p v-if="errors.name" class="text-red-500 text-sm">
+        {{ errors.name }}
+      </p>
+    </div>
+
+    <!-- Similar fields for email and password -->
+
+    <button
+      type="submit"
+      class="w-full bg-primary-600 text-white py-2 px-4 rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
+    >
+      Submit
+    </button>
+  </StyledForm>
+</template>
+```
+
+## Responsive Design
+
+### Media Queries with Styled Components
+
+```typescript
+// src/styles/mediaQueries.ts
+export const media = {
+  sm: (styles: TemplateStringsArray) =>
+    `@media (min-width: 640px) { ${styles} }`,
+  md: (styles: TemplateStringsArray) =>
+    `@media (min-width: 768px) { ${styles} }`,
+  lg: (styles: TemplateStringsArray) =>
+    `@media (min-width: 1024px) { ${styles} }`,
+  xl: (styles: TemplateStringsArray) =>
+    `@media (min-width: 1280px) { ${styles} }`,
+};
+
+// Usage in components
+const ResponsiveContainer = styled.div`
+  padding: 1rem;
+  
+  ${media.sm`
+    padding: 2rem;
+  `}
+  
+  ${media.lg`
+    padding: 3rem;
+    max-width: 1024px;
+    margin: 0 auto;
+  `}
+`;
+```
+
+## Performance Optimization
+
+### Dynamic Imports
+
+```typescript
+// src/router/index.ts
+import { RouteRecordRaw } from 'vue-router';
+
+const routes: RouteRecordRaw[] = [
+  {
+    path: '/',
+    component: () => import('@/views/Home.vue'),
+  },
+  {
+    path: '/dashboard',
+    component: () => import('@/views/Dashboard.vue'),
+    children: [
+      {
+        path: 'profile',
+        component: () => import('@/views/Profile.vue'),
+      },
+      {
+        path: 'settings',
+        component: () => import('@/views/Settings.vue'),
+      },
+    ],
+  },
+];
+```
+
+### Component Optimization
+
+```typescript
+// src/components/LazyImage.vue
+<script setup lang="ts">
+import { ref, onMounted } from 'vue';
+
+interface Props {
+  src: string;
+  alt: string;
+  width?: number;
+  height?: number;
+}
+
+const props = defineProps<Props>();
+const isLoaded = ref(false);
+const observer = ref<IntersectionObserver | null>(null);
+const imageRef = ref<HTMLImageElement | null>(null);
+
+onMounted(() => {
+  observer.value = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        loadImage();
+        observer.value?.unobserve(entry.target);
+      }
+    });
+  });
+
+  if (imageRef.value) {
+    observer.value.observe(imageRef.value);
+  }
+});
+
+const loadImage = () => {
+  const img = new Image();
+  img.src = props.src;
+  img.onload = () => {
+    isLoaded.value = true;
+  };
+};
+</script>
+
+<template>
+  <div
+    ref="imageRef"
+    class="relative overflow-hidden bg-gray-100"
+    :style="{
+      width: width ? `${width}px` : '100%',
+      height: height ? `${height}px` : 'auto'
+    }"
+  >
+    <img
+      v-if="isLoaded"
+      :src="src"
+      :alt="alt"
+      class="w-full h-full object-cover transition-opacity duration-300"
+      :class="{ 'opacity-100': isLoaded, 'opacity-0': !isLoaded }"
+    />
+    <div
+      v-else
+      class="absolute inset-0 bg-gray-200 animate-pulse"
+    />
+  </div>
+</template>
+```
+
+## Conclusion
+
+Building modern frontend applications with Vue 3, TypeScript, Tailwind CSS, and Styled Components provides a powerful combination of:
+
+1. **Type Safety**
+   - Strong typing with TypeScript
+   - Better developer experience
+   - Catch errors early
+
+2. **Styling Flexibility**
+   - Utility-first approach with Tailwind
+   - Component-based styling with Styled Components
+   - Theme consistency
+
+3. **Component Architecture**
+   - Reusable components
+   - Type-safe props
+   - Composable functions
+
+4. **Performance**
+   - Optimized loading
+   - Code splitting
+   - Lazy loading
+
+Remember to:
+- Keep components focused and reusable
+- Maintain consistent typing across the application
+- Use appropriate styling solutions for different use cases
+- Optimize for performance
+- Follow Vue 3 best practices
+
+## Resources
+
+- [Vue 3 Documentation](https://vuejs.org/)
+- [TypeScript Documentation](https://www.typescriptlang.org/)
+- [Tailwind CSS Documentation](https://tailwindcss.com/)
+- [Vue Styled Components](https://github.com/styled-components/vue-styled-components)
+
+## Testing
+
+### Unit Testing with Vitest
+
+```typescript
+// src/components/__tests__/Button.spec.ts
+import { describe, it, expect } from 'vitest';
+import { mount } from '@vue/test-utils';
+import Button from '../Button.vue';
+
+describe('Button Component', () => {
+  it('renders properly with default props', () => {
+    const wrapper = mount(Button, {
+      props: {
+        variant: 'primary',
+        size: 'md'
+      }
+    });
+
+    expect(wrapper.classes()).toContain('btn-primary');
+    expect(wrapper.classes()).toContain('btn-md');
+  });
+
+  it('shows loading state correctly', async () => {
+    const wrapper = mount(Button, {
+      props: {
+        loading: true,
+        variant: 'primary',
+        size: 'md'
+      }
+    });
+
+    expect(wrapper.find('.animate-spin').exists()).toBe(true);
+    expect(wrapper.text()).toContain('Loading');
+  });
+
+  it('handles disabled state properly', () => {
+    const wrapper = mount(Button, {
+      props: {
+        disabled: true,
+        variant: 'primary',
+        size: 'md'
+      }
+    });
+
+    expect(wrapper.attributes('disabled')).toBeDefined();
+    expect(wrapper.classes()).toContain('opacity-50');
+  });
+});
+```
+
+### Component Testing with Cypress
+
+```typescript
+// cypress/components/Form.cy.ts
+import Form from '../../src/components/Form.vue';
+
+describe('Form Component', () => {
+  it('validates required fields', () => {
+    cy.mount(Form);
+    cy.get('button[type="submit"]').click();
+
+    cy.get('.text-red-500').should('have.length.at.least', 1);
+    cy.contains('Name is required').should('be.visible');
+  });
+
+  it('submits form with valid data', () => {
+    cy.mount(Form);
+
+    cy.get('input[name="name"]').type('John Doe');
+    cy.get('input[name="email"]').type('john@example.com');
+    cy.get('input[name="password"]').type('password123');
+
+    cy.get('button[type="submit"]').click();
+
+    // Verify form submission
+    cy.get('.text-red-500').should('not.exist');
+  });
+});
+```
+
+## State Management
+
+### Using Pinia with TypeScript
+
+```typescript
+// src/stores/user.ts
+import { defineStore } from 'pinia';
+import type { User, UserPreferences } from '@/types';
+
+interface UserState {
+  currentUser: User | null;
+  isAuthenticated: boolean;
+  loading: boolean;
+}
+
+export const useUserStore = defineStore('user', {
+  state: (): UserState => ({
+    currentUser: null,
+    isAuthenticated: false,
+    loading: false
+  }),
+
+  getters: {
+    userPreferences: (state): UserPreferences | undefined => {
+      return state.currentUser?.preferences;
+    },
+    
+    displayName: (state): string => {
+      return state.currentUser?.name ?? 'Guest';
+    }
+  },
+
+  actions: {
+    async updatePreferences(preferences: Partial<UserPreferences>) {
+      if (!this.currentUser) return;
+
+      this.loading = true;
+      try {
+        const response = await fetch(`/api/users/${this.currentUser.id}/preferences`, {
+          method: 'PATCH',
+          body: JSON.stringify(preferences)
+        });
+
+        if (!response.ok) throw new Error('Failed to update preferences');
+
+        this.currentUser.preferences = {
+          ...this.currentUser.preferences,
+          ...preferences
+        };
+      } catch (error) {
+        console.error('Error updating preferences:', error);
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    }
+  }
+});
+```
+
+## Advanced Styling Patterns
+
+### Creating a Theme Provider
+
+```typescript
+// src/components/ThemeProvider.vue
+<script setup lang="ts">
+import { provide, computed } from 'vue';
+import { useTheme } from '@/composables/useTheme';
+import type { Theme } from '@/styles/theme';
+
+const { isDark, theme } = useTheme();
+
+const themeValue = computed<Theme>(() => ({
+  colors: {
+    ...theme.value,
+    background: isDark.value ? '#1a1a1a' : '#ffffff',
+    text: isDark.value ? '#ffffff' : '#1a1a1a',
+  },
+  spacing: {
+    xs: '0.25rem',
+    sm: '0.5rem',
+    md: '1rem',
+    lg: '1.5rem',
+    xl: '2rem',
+  },
+  breakpoints: {
+    sm: '640px',
+    md: '768px',
+    lg: '1024px',
+    xl: '1280px',
+  },
+}));
+
+provide('theme', themeValue);
+</script>
+
+<template>
+  <div :class="{ 'dark': isDark }">
+    <slot />
+  </div>
+</template>
+```
+
+### Creating Reusable Styled Components
+
+```typescript
+// src/components/styled/index.ts
+import styled from 'vue-styled-components';
+
+export const Flex = styled.div`
+  display: flex;
+  ${props => props.direction && `flex-direction: ${props.direction};`}
+  ${props => props.justify && `justify-content: ${props.justify};`}
+  ${props => props.align && `align-items: ${props.align};`}
+  ${props => props.gap && `gap: ${props.theme.spacing[props.gap]};`}
+`;
+
+export const Grid = styled.div`
+  display: grid;
+  ${props => props.columns && `grid-template-columns: repeat(${props.columns}, 1fr);`}
+  ${props => props.gap && `gap: ${props.theme.spacing[props.gap]};`}
+`;
+
+export const Text = styled.p`
+  color: ${props => props.theme.colors.text};
+  ${props => props.size && `font-size: ${props.theme.typography[props.size]};`}
+  ${props => props.weight && `font-weight: ${props.weight};`}
+`;
+```
+
+## Performance Monitoring
+
+### Setting up Performance Tracking
+
+```typescript
+// src/plugins/performance.ts
+import { onMounted, onUnmounted } from 'vue';
+
+export function usePerformanceMonitoring() {
+  let observer: PerformanceObserver;
+
+  onMounted(() => {
+    observer = new PerformanceObserver((list) => {
+      list.getEntries().forEach((entry) => {
+        // Filter out non-interesting entries
+        if (entry.entryType === 'largest-contentful-paint') {
+          console.log('LCP:', entry.startTime);
+        }
+        if (entry.entryType === 'first-input') {
+          console.log('FID:', entry.processingStart - entry.startTime);
+        }
+      });
+    });
+
+    observer.observe({
+      entryTypes: ['largest-contentful-paint', 'first-input']
+    });
+  });
+
+  onUnmounted(() => {
+    observer.disconnect();
+  });
+}
+```
+
+## Best Practices and Common Patterns
+
+1. **Component Organization**
+   - Keep components small and focused
+   - Use TypeScript interfaces for props
+   - Implement proper error boundaries
+   - Use composables for shared logic
+
+2. **Styling Guidelines**
+   - Use Tailwind for common utilities
+   - Use Styled Components for complex, dynamic styles
+   - Maintain a consistent theming system
+   - Follow responsive design principles
+
+3. **Performance Optimization**
+   - Implement lazy loading
+   - Use proper caching strategies
+   - Optimize bundle size
+   - Monitor performance metrics
+
+4. **Testing Strategy**
+   - Write unit tests for business logic
+   - Use component testing for UI elements
+   - Implement end-to-end tests for critical paths
+   - Maintain good test coverage
+
+Remember to continuously evaluate and improve your application's architecture and performance as it grows.
+
+Happy coding!

@@ -1,0 +1,476 @@
+---
+title: 'Building Express.js APIs with SQL Databases: MySQL, PostgreSQL, and Best Practices'
+date: '2025-01-18'
+lastmod: '2025-01-18'
+tags: ['express', 'postgresql', 'mysql', 'database', 'backend', 'sql']
+draft: false
+summary: 'A comprehensive guide to building Node.js/Express APIs with SQL databases. Learn how to work with PostgreSQL and MySQL, implement efficient data models, and follow best practices for building scalable applications.'
+images: ['/static/images/sql-databases.png']
+---
+
+## Introduction
+
+SQL databases remain the backbone of many modern applications, offering robust data integrity, complex querying capabilities, and proven reliability. In this guide, we'll explore how to build Express.js APIs with PostgreSQL and MySQL, comparing their features and implementing best practices for production applications.
+
+## Database Comparison
+
+Before diving into implementation, let's compare PostgreSQL and MySQL:
+
+### PostgreSQL Strengths
+- Advanced JSON handling with JSONB
+- Rich set of data types (Arrays, Enums, etc.)
+- Superior handling of concurrent users
+- Full-text search capabilities
+- Extensibility with custom functions
+
+### MySQL Strengths
+- Simpler setup and management
+- Lower resource consumption
+- Better performance for read-heavy workloads
+- Widespread hosting availability
+- Excellent replication features
+
+## Setting Up the Project
+
+First, let's set up our Express.js project with necessary dependencies:
+
+```bash
+mkdir express-sql-api
+cd express-sql-api
+npm init -y
+npm install express dotenv cors helmet
+npm install pg mysql2 knex
+npm install --save-dev typescript @types/express @types/pg @types/cors
+```
+
+Create our basic Express server structure:
+
+```typescript
+// src/server.ts
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import { errorHandler } from './middleware/errorHandler';
+import routes from './routes';
+
+const app = express();
+const port = process.env.PORT || 3000;
+
+app.use(helmet());
+app.use(cors());
+app.use(express.json());
+
+// Routes
+app.use('/api', routes);
+
+// Error handling
+app.use(errorHandler);
+
+app.listen(port, () => {
+  console.log(`Server running at http://localhost:${port}`);
+});
+```
+
+## Database Connection Setup
+
+### PostgreSQL Connection
+
+```typescript
+// src/config/postgresql.ts
+import { Pool } from 'pg';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+export const pgPool = new Pool({
+  user: process.env.POSTGRES_USER,
+  host: process.env.POSTGRES_HOST,
+  database: process.env.POSTGRES_DB,
+  password: process.env.POSTGRES_PASSWORD,
+  port: parseInt(process.env.POSTGRES_PORT || '5432'),
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  max: 20, // Maximum number of clients in the pool
+  idleTimeoutMillis: 30000
+});
+
+// Handle pool errors
+pgPool.on('error', (err) => {
+  console.error('Unexpected error on idle client', err);
+  process.exit(-1);
+});
+```
+
+### MySQL Connection
+
+```typescript
+// src/config/mysql.ts
+import mysql from 'mysql2/promise';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+export const mysqlPool = mysql.createPool({
+  host: process.env.MYSQL_HOST,
+  user: process.env.MYSQL_USER,
+  password: process.env.MYSQL_PASSWORD,
+  database: process.env.MYSQL_DATABASE,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
+});
+```
+
+## Database Schema and Migrations
+
+We'll use Knex.js for database migrations, supporting both PostgreSQL and MySQL:
+
+```typescript
+// knexfile.ts
+import { Knex } from 'knex';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const config: { [key: string]: Knex.Config } = {
+  development: {
+    client: process.env.DB_CLIENT || 'pg',
+    connection: {
+      host: process.env.DB_HOST,
+      user: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_NAME,
+    },
+    migrations: {
+      directory: './src/database/migrations',
+    },
+    seeds: {
+      directory: './src/database/seeds',
+    },
+  }
+};
+
+export default config;
+```
+
+Create a migration for a users table:
+
+```typescript
+// src/database/migrations/20250118_create_users.ts
+import { Knex } from 'knex';
+
+export async function up(knex: Knex): Promise<void> {
+  await knex.schema.createTable('users', (table) => {
+    table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
+    table.string('email').unique().notNullable();
+    table.string('name').notNullable();
+    table.string('password_hash').notNullable();
+    table.jsonb('preferences').defaultTo('{}');
+    table.timestamps(true, true);
+  });
+}
+
+export async function down(knex: Knex): Promise<void> {
+  await knex.schema.dropTable('users');
+}
+```
+
+## Repository Pattern Implementation
+
+Let's implement the repository pattern to abstract database operations:
+
+```typescript
+// src/repositories/base.repository.ts
+export interface BaseRepository<T> {
+  findAll(): Promise<T[]>;
+  findById(id: string): Promise<T | null>;
+  create(data: Partial<T>): Promise<T>;
+  update(id: string, data: Partial<T>): Promise<T | null>;
+  delete(id: string): Promise<boolean>;
+}
+
+// src/repositories/user.repository.ts
+import { Pool } from 'pg';
+import { BaseRepository } from './base.repository';
+
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  preferences: object;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export class PostgresUserRepository implements BaseRepository<User> {
+  constructor(private pool: Pool) {}
+
+  async findAll(): Promise<User[]> {
+    const { rows } = await this.pool.query(
+      'SELECT * FROM users ORDER BY created_at DESC'
+    );
+    return rows;
+  }
+
+  async findById(id: string): Promise<User | null> {
+    const { rows } = await this.pool.query(
+      'SELECT * FROM users WHERE id = $1',
+      [id]
+    );
+    return rows[0] || null;
+  }
+
+  async create(data: Partial<User>): Promise<User> {
+    const { rows } = await this.pool.query(
+      `INSERT INTO users (email, name, preferences)
+       VALUES ($1, $2, $3)
+       RETURNING *`,
+      [data.email, data.name, data.preferences]
+    );
+    return rows[0];
+  }
+
+  async update(id: string, data: Partial<User>): Promise<User | null> {
+    const { rows } = await this.pool.query(
+      `UPDATE users
+       SET email = COALESCE($1, email),
+           name = COALESCE($2, name),
+           preferences = COALESCE($3, preferences),
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = $4
+       RETURNING *`,
+      [data.email, data.name, data.preferences, id]
+    );
+    return rows[0] || null;
+  }
+
+  async delete(id: string): Promise<boolean> {
+    const { rowCount } = await this.pool.query(
+      'DELETE FROM users WHERE id = $1',
+      [id]
+    );
+    return rowCount > 0;
+  }
+}
+```
+
+## Implementing Services
+
+Create a service layer to handle business logic:
+
+```typescript
+// src/services/user.service.ts
+import { User } from '../models/user.model';
+import { PostgresUserRepository } from '../repositories/user.repository';
+import { hashPassword } from '../utils/auth';
+
+export class UserService {
+  constructor(private userRepository: PostgresUserRepository) {}
+
+  async createUser(userData: Partial<User>): Promise<User> {
+    // Validate email format
+    if (!this.isValidEmail(userData.email)) {
+      throw new Error('Invalid email format');
+    }
+
+    // Check if user exists
+    const existingUser = await this.userRepository.findByEmail(userData.email);
+    if (existingUser) {
+      throw new Error('User already exists');
+    }
+
+    // Hash password
+    if (userData.password) {
+      userData.password_hash = await hashPassword(userData.password);
+      delete userData.password;
+    }
+
+    return this.userRepository.create(userData);
+  }
+
+  private isValidEmail(email: string): boolean {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  }
+}
+```
+
+## Performance Optimization
+
+### Connection Pooling
+
+For both PostgreSQL and MySQL, implement proper connection pooling:
+
+```typescript
+// src/config/database.ts
+import { Pool } from 'pg';
+
+export const createConnectionPool = () => {
+  const pool = new Pool({
+    max: 20, // Maximum pool size
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 2000,
+  });
+
+  // Implement keepalive
+  pool.on('connect', (client) => {
+    client.query('SET statement_timeout = 10000'); // 10s statement timeout
+  });
+
+  return pool;
+};
+```
+
+### Query Optimization
+
+Implement query optimization techniques:
+
+```typescript
+// src/repositories/user.repository.ts
+async findUsersWithProfiles(): Promise<User[]> {
+  const { rows } = await this.pool.query(`
+    SELECT 
+      u.*,
+      p.bio,
+      p.avatar_url
+    FROM users u
+    LEFT JOIN profiles p ON u.id = p.user_id
+    WHERE u.deleted_at IS NULL
+    ORDER BY u.created_at DESC
+    LIMIT 100
+  `);
+  
+  return rows;
+}
+```
+
+## Error Handling
+
+Implement comprehensive error handling:
+
+```typescript
+// src/middleware/errorHandler.ts
+import { Request, Response, NextFunction } from 'express';
+
+export class AppError extends Error {
+  constructor(
+    public statusCode: number,
+    public message: string,
+    public isOperational = true
+  ) {
+    super(message);
+    Object.setPrototypeOf(this, AppError.prototype);
+  }
+}
+
+export const errorHandler = (
+  err: Error,
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  if (err instanceof AppError) {
+    return res.status(err.statusCode).json({
+      status: 'error',
+      message: err.message,
+    });
+  }
+
+  // Log unexpected errors
+  console.error('Unexpected error:', err);
+
+  return res.status(500).json({
+    status: 'error',
+    message: 'Internal server error',
+  });
+};
+```
+
+## Data Validation
+
+Implement request validation using a schema validation library:
+
+```typescript
+// src/validators/user.validator.ts
+import Joi from 'joi';
+
+export const createUserSchema = Joi.object({
+  email: Joi.string().email().required(),
+  name: Joi.string().min(2).max(100).required(),
+  password: Joi.string().min(8).required(),
+  preferences: Joi.object().default({}),
+});
+
+// Middleware implementation
+export const validateCreateUser = (req: Request, res: Response, next: NextFunction) => {
+  const { error } = createUserSchema.validate(req.body);
+  if (error) {
+    throw new AppError(400, error.details[0].message);
+  }
+  next();
+};
+```
+
+## Testing
+
+Implement comprehensive testing:
+
+```typescript
+// src/tests/user.service.test.ts
+import { UserService } from '../services/user.service';
+import { PostgresUserRepository } from '../repositories/user.repository';
+import { createTestDatabase } from './utils/test-db';
+
+describe('UserService', () => {
+  let userService: UserService;
+  let testDb: any;
+
+  beforeAll(async () => {
+    testDb = await createTestDatabase();
+    const userRepo = new PostgresUserRepository(testDb.pool);
+    userService = new UserService(userRepo);
+  });
+
+  afterAll(async () => {
+    await testDb.close();
+  });
+
+  it('should create a new user', async () => {
+    const userData = {
+      email: 'test@example.com',
+      name: 'Test User',
+      password: 'password123'
+    };
+
+    const user = await userService.createUser(userData);
+    expect(user).toHaveProperty('id');
+    expect(user.email).toBe(userData.email);
+  });
+});
+```
+
+## Conclusion
+
+Building robust APIs with SQL databases requires careful consideration of various factors:
+
+1. Choose the right database based on your specific needs
+2. Implement proper connection pooling and error handling
+3. Use migrations for database schema management
+4. Follow the repository pattern for clean code organization
+5. Implement comprehensive validation and testing
+6. Optimize queries for performance
+
+Remember to:
+- Regular monitor database performance
+- Keep connection pools properly sized
+- Implement proper indexing strategies
+- Use prepared statements to prevent SQL injection
+- Implement proper logging and monitoring
+
+## Resources
+
+- [PostgreSQL Documentation](https://www.postgresql.org/docs/)
+- [MySQL Documentation](https://dev.mysql.com/doc/)
+- [Knex.js Documentation](https://knexjs.org/)
+- [Node-Postgres Documentation](https://node-postgres.com/)
+
+Happy coding!
