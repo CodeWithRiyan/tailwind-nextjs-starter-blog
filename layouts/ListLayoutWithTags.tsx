@@ -31,52 +31,50 @@ function Pagination({ totalPages, currentPage }: PaginationProps) {
   const nextPage = currentPage + 1 <= totalPages
 
   return (
-    <div className="pb-8 pt-6">
-      <nav className="flex items-center justify-between px-4 sm:px-0">
-        <div className="flex flex-1 justify-between space-x-4 sm:justify-end">
-          {!prevPage && (
-            <button
-              className="relative inline-flex cursor-not-allowed items-center rounded-md bg-gray-50 px-4 py-2 text-sm font-medium text-gray-400"
-              disabled
-            >
-              <ChevronLeft className="mr-2 h-4 w-4" />
-              Previous
-            </button>
-          )}
-          {prevPage && (
-            <Link
-              href={
-                currentPage - 1 === 1 ? `/${basePath}/` : `/${basePath}/page/${currentPage - 1}`
-              }
-              className="relative inline-flex items-center rounded-md bg-white px-4 py-2 text-sm font-medium text-gray-700 transition duration-150 ease-in-out hover:bg-gray-50"
-            >
-              <ChevronLeft className="mr-2 h-4 w-4" />
-              Previous
-            </Link>
-          )}
-          <span className="relative inline-flex items-center rounded-md bg-white px-4 py-2 text-sm font-medium">
-            Page {currentPage} of {totalPages}
-          </span>
-          {!nextPage && (
-            <button
-              className="relative inline-flex cursor-not-allowed items-center rounded-md bg-gray-50 px-4 py-2 text-sm font-medium text-gray-400"
-              disabled
-            >
-              Next
-              <ChevronRight className="ml-2 h-4 w-4" />
-            </button>
-          )}
-          {nextPage && (
-            <Link
-              href={`/${basePath}/page/${currentPage + 1}`}
-              className="relative inline-flex items-center rounded-md bg-white px-4 py-2 text-sm font-medium text-gray-700 transition duration-150 ease-in-out hover:bg-gray-50"
-            >
-              Next
-              <ChevronRight className="ml-2 h-4 w-4" />
-            </Link>
-          )}
+    <div className="mt-12">
+      <div className="text-center">
+        <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+          <div className="flex items-center gap-4">
+            {!prevPage ? (
+              <button
+                disabled
+                className="flex items-center gap-2 rounded-full bg-gradient-to-r from-primary-600/50 to-primary-400/50 px-6 py-3 text-lg font-semibold text-white opacity-50"
+              >
+                <ChevronLeft className="h-5 w-5" />
+                Previous
+              </button>
+            ) : (
+              <Link
+                href={
+                  currentPage - 1 === 1 ? `/${basePath}/` : `/${basePath}/page/${currentPage - 1}`
+                }
+                className="group flex items-center gap-2 rounded-full bg-gradient-to-r from-primary-600 to-primary-400 px-6 py-3 text-lg font-semibold text-white transition-all duration-300 hover:from-primary-700 hover:to-primary-500"
+              >
+                <ChevronLeft className="h-5 w-5 transition-transform duration-300 group-hover:-translate-x-0.5" />
+                Previous
+              </Link>
+            )}
+
+            {!nextPage ? (
+              <button
+                disabled
+                className="flex items-center gap-2 rounded-full bg-gradient-to-r from-primary-600/50 to-primary-400/50 px-6 py-3 text-lg font-semibold text-white opacity-50"
+              >
+                Next
+                <ChevronRight className="h-5 w-5" />
+              </button>
+            ) : (
+              <Link
+                href={`/${basePath}/page/${currentPage + 1}`}
+                className="group flex items-center gap-2 rounded-full bg-gradient-to-r from-primary-600 to-primary-400 px-6 py-3 text-lg font-semibold text-white transition-all duration-300 hover:from-primary-700 hover:to-primary-500"
+              >
+                Next
+                <ChevronRight className="h-5 w-5 transition-transform duration-300 group-hover:translate-x-0.5" />
+              </Link>
+            )}
+          </div>
         </div>
-      </nav>
+      </div>
     </div>
   )
 }
@@ -104,7 +102,7 @@ export default function ListLayoutWithTags({
         </div>
 
         <div className="lg:grid lg:grid-cols-12 lg:gap-8">
-          <div className="hidden lg:col-span-3 lg:block">
+          <div className="hidden lg:col-span-4 lg:block">
             <div className="sticky top-6">
               <div className="overflow-hidden rounded-lg bg-white shadow dark:bg-gray-800">
                 <div className="p-6">
@@ -128,7 +126,7 @@ export default function ListLayoutWithTags({
             </div>
           </div>
 
-          <div className="lg:col-span-9">
+          <div className="lg:col-span-8">
             <div className="space-y-6">
               {displayPosts.map((post) => {
                 const { path, date, title, summary, tags } = post
