@@ -7,6 +7,7 @@ import LogoBlack from '@/data/logo-black.png'
 import LogoWhite from '@/data/logo-white.png'
 import { useTheme } from 'next-themes'
 import { Facebook, Linkedin, Instagram } from './social-icons/icons'
+import siteMetadata from '@/data/siteMetadata'
 
 const Footer = () => {
   const { theme } = useTheme()
@@ -118,17 +119,17 @@ const Footer = () => {
             <ul className="mt-4 space-y-4">
               <li>
                 <a
-                  href="mailto:marketing@riyan.id"
+                  href={`mailto:${siteMetadata.email}`}
                   className="flex items-center text-sm text-gray-600 transition-colors 
                     duration-300 hover:text-primary-500 dark:text-gray-400 dark:hover:text-primary-400"
                 >
                   <Mail className="mr-2 h-4 w-4" />
-                  marketing@riyan.id
+                  {siteMetadata.email}
                 </a>
               </li>
               <li>
                 <a
-                  href="tel:+6285713082841"
+                  href={`tel:${siteMetadata.whatsapp}`}
                   className="flex items-center text-sm text-gray-600 transition-colors 
                     duration-300 hover:text-primary-500 dark:text-gray-400 dark:hover:text-primary-400"
                 >

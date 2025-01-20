@@ -13,6 +13,7 @@ import { ThemeProviders } from './theme-providers'
 import { Metadata } from 'next'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import { Analytics as NextAnalytics } from '@vercel/analytics/next'
+import ScrollTopAndComment from '@/components/ScrollTopAndComment'
 
 const space_grotesk = Space_Grotesk({
   subsets: ['latin'],
@@ -104,6 +105,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <SectionContainer>
             <SearchProvider searchConfig={siteMetadata.search as SearchConfig}>
               <Header />
+              <ScrollTopAndComment />
               <main className="mb-auto">{children}</main>
             </SearchProvider>
             <Footer />

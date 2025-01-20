@@ -22,6 +22,7 @@ const siteMetadata = {
   instagram: 'ttps://www.instagram.com/ptriyansolusiteknologi',
   medium: 'https://medium.com',
   bluesky: 'https://bsky.app/',
+  whatsapp: '+6285713082841',
   locale: 'en-US',
   // set to true if you want a navbar fixed to the top
   stickyNav: true,
@@ -88,7 +89,7 @@ const siteMetadata = {
   search: {
     provider: 'kbar', // kbar or algolia
     kbarConfig: {
-      searchDocumentsPath: `${process.env.BASE_PATH || ''}/search.json`, // path to load documents to search
+      searchDocumentsPath: 'search.json', // path to load documents to search
     },
     // provider: 'algolia',
     // algoliaConfig: {

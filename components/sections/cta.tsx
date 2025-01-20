@@ -1,3 +1,4 @@
+import siteMetadata from '@/data/siteMetadata'
 import React from 'react'
 
 export default function cta() {
@@ -13,7 +14,7 @@ export default function cta() {
           </p>
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <a
-              href="https://wa.me/6285713082841"
+              href={`https://wa.me/${siteMetadata.whatsapp}`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 rounded-full bg-gradient-to-r from-primary-600 to-primary-400 px-8 py-4 text-lg font-semibold text-white shadow-lg transition-all duration-300 hover:from-primary-700 hover:to-primary-500 hover:shadow-xl"
@@ -25,7 +26,7 @@ export default function cta() {
             </a>
             <span className="text-gray-500 dark:text-gray-400">or</span>
             <a
-              href="mailto:marketing@riyan.id"
+              href={`mailto:${siteMetadata.email}`}
               className="group flex items-center gap-2 rounded-full bg-gradient-to-r from-primary-600 to-primary-400 px-8 py-4 text-lg font-semibold text-white transition-all duration-300 hover:from-primary-700 hover:to-primary-500"
             >
               Send us an Email
