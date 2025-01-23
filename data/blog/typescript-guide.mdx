@@ -1,0 +1,369 @@
+---
+title: 'TypeScript Complete Guide'
+date: '2025-01-22'
+tags: ['typescript', 'javascript', 'programming']
+summary: 'Comprehensive guide to TypeScript features, patterns, and best practices'
+---
+
+## Basic Types
+
+```typescript
+// Core Types
+let isDone: boolean = false;
+let decimal: number = 6;
+let color: string = "blue";
+let list: number[] = [1, 2, 3];
+let tuple: [string, number] = ["hello", 10];
+let anyType: any = 4;
+let voidType: void = undefined;
+let nullType: null = null;
+let undefinedType: undefined = undefined;
+
+// Enum
+enum Color {
+    Red,
+    Green,
+    Blue
+}
+let c: Color = Color.Green;
+
+// Union Types
+let unionType: string | number = "hello";
+unionType = 42; // valid
+
+// Type Aliases
+type Point = {
+    x: number;
+    y: number;
+};
+
+// Literal Types
+type Direction = "North" | "South" | "East" | "West";
+let direction: Direction = "North";
+```
+
+## Interfaces
+
+```typescript
+// Basic Interface
+interface User {
+    id: number;
+    name: string;
+    email?: string; // Optional property
+    readonly createdAt: Date; // Read-only property
+}
+
+// Extending Interfaces
+interface Employee extends User {
+    department: string;
+    salary: number;
+}
+
+// Interface with Methods
+interface Animal {
+    name: string;
+    makeSound(): void;
+    eat(food: string): boolean;
+}
+
+// Implementation
+class Dog implements Animal {
+    name: string;
+
+    constructor(name: string) {
+        this.name = name;
+    }
+
+    makeSound(): void {
+        console.log("Woof!");
+    }
+
+    eat(food: string): boolean {
+        return true;
+    }
+}
+```
+
+## Classes
+
+```typescript
+// Basic Class
+class Person {
+    private name: string;
+    protected age: number;
+    public email: string;
+
+    constructor(name: string, age: number, email: string) {
+        this.name = name;
+        this.age = age;
+        this.email = email;
+    }
+
+    getInfo(): string {
+        return `${this.name}, ${this.age}`;
+    }
+}
+
+// Inheritance
+class Student extends Person {
+    private studentId: string;
+
+    constructor(name: string, age: number, email: string, studentId: string) {
+        super(name, age, email);
+        this.studentId = studentId;
+    }
+
+    // Method override
+    getInfo(): string {
+        return `${super.getInfo()} - ID: ${this.studentId}`;
+    }
+}
+
+// Abstract Class
+abstract class Shape {
+    abstract getArea(): number;
+    
+    getType(): string {
+        return "Shape";
+    }
+}
+
+class Circle extends Shape {
+    constructor(private radius: number) {
+        super();
+    }
+
+    getArea(): number {
+        return Math.PI * this.radius ** 2;
+    }
+}
+```
+
+## Generics
+
+```typescript
+// Generic Function
+function identity<T>(arg: T): T {
+    return arg;
+}
+
+// Generic Interface
+interface GenericResponse<T> {
+    data: T;
+    status: number;
+    message: string;
+}
+
+// Generic Class
+class Container<T> {
+    private value: T;
+
+    constructor(value: T) {
+        this.value = value;
+    }
+
+    getValue(): T {
+        return this.value;
+    }
+}
+
+// Generic Constraints
+interface Lengthwise {
+    length: number;
+}
+
+function loggingIdentity<T extends Lengthwise>(arg: T): T {
+    console.log(arg.length);
+    return arg;
+}
+
+// Generic Type Aliases
+type ArrayOrValue<T> = T | T[];
+
+// Generic Utility Types
+type Readonly<T> = {
+    readonly [P in keyof T]: T[P];
+};
+
+type Partial<T> = {
+    [P in keyof T]?: T[P];
+};
+```
+
+## Advanced Types
+
+```typescript
+// Intersection Types
+type Admin = {
+    name: string;
+    privileges: string[];
+};
+
+type Employee = {
+    name: string;
+    startDate: Date;
+};
+
+type ElevatedEmployee = Admin & Employee;
+
+// Type Guards
+function isEmployee(staff: Admin | Employee): staff is Employee {
+    return (staff as Employee).startDate !== undefined;
+}
+
+// Mapped Types
+type Optional<T> = {
+    [P in keyof T]?: T[P];
+};
+
+type Required<T> = {
+    [P in keyof T]-?: T[P];
+};
+
+// Conditional Types
+type NonNullable<T> = T extends null | undefined ? never : T;
+
+// Template Literal Types
+type EmailLocaleIDs = "welcome_email" | "email_heading";
+type FooterLocaleIDs = "footer_title" | "footer_sendoff";
+type AllLocaleIDs = `${EmailLocaleIDs | FooterLocaleIDs}_id`;
+```
+
+## Decorators
+
+```typescript
+// Class Decorator
+function sealed(constructor: Function) {
+    Object.seal(constructor);
+    Object.seal(constructor.prototype);
+}
+
+@sealed
+class BugReport {
+    type = "report";
+    title: string;
+
+    constructor(t: string) {
+        this.title = t;
+    }
+}
+
+// Method Decorator
+function enumerable(value: boolean) {
+    return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+        descriptor.enumerable = value;
+    };
+}
+
+class Example {
+    @enumerable(false)
+    method() {}
+}
+
+// Property Decorator
+function format(formatString: string) {
+    return function (target: any, propertyKey: string) {
+        let value = target[propertyKey];
+
+        const getter = function() {
+            return `${formatString} ${value}`;
+        };
+
+        const setter = function(newVal: string) {
+            value = newVal;
+        };
+
+        Object.defineProperty(target, propertyKey, {
+            get: getter,
+            set: setter
+        });
+    };
+}
+```
+
+## Type Inference & Type Assertions
+
+```typescript
+// Type Inference
+let x = 3; // Inferred as number
+let arr = [1, 2, 3]; // Inferred as number[]
+let [first, second] = arr; // Destructuring with inference
+
+// Type Assertions
+let someValue: any = "this is a string";
+let strLength: number = (someValue as string).length;
+let strLength2: number = (<string>someValue).length; // Alternative syntax
+```
+
+## Modules & Namespaces
+
+```typescript
+// Exporting
+export interface StringValidator {
+    isAcceptable(s: string): boolean;
+}
+
+export class EmailValidator implements StringValidator {
+    isAcceptable(s: string): boolean {
+        return s.includes('@');
+    }
+}
+
+// Importing
+import { StringValidator, EmailValidator } from './validators';
+import * as validators from './validators';
+import DefaultExport from './module';
+
+// Namespace
+namespace Validation {
+    export interface StringValidator {
+        isAcceptable(s: string): boolean;
+    }
+
+    export class LettersOnlyValidator implements StringValidator {
+        isAcceptable(s: string): boolean {
+            return /^[A-Za-z]+$/.test(s);
+        }
+    }
+}
+```
+
+## TypeScript Configuration
+
+```json
+{
+    "compilerOptions": {
+        "target": "es6",
+        "module": "commonjs",
+        "strict": true,
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true,
+        "outDir": "./dist",
+        "rootDir": "./src",
+        "declaration": true,
+        "sourceMap": true,
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": true
+    },
+    "include": ["src/**/*"],
+    "exclude": ["node_modules", "**/*.spec.ts"]
+}
+```
+
+## Resources
+
+### Official Documentation
+- [TypeScript Documentation](https://www.typescriptlang.org/docs/)
+- [TypeScript Playground](https://www.typescriptlang.org/play)
+- [TypeScript GitHub Repository](https://github.com/microsoft/TypeScript)
+
+### Learning Resources
+- [TypeScript Deep Dive](https://basarat.gitbook.io/typescript/)
+- [TypeScript Handbook](https://www.typescriptlang.org/docs/handbook/intro.html)
+- [TypeScript Weekly Newsletter](https://typescript-weekly.com/)
+
+### Tools
+- [TSLint](https://palantir.github.io/tslint/)
+- [ESLint with TypeScript](https://github.com/typescript-eslint/typescript-eslint)
+- [TypeScript Compiler API](https://github.com/Microsoft/TypeScript/wiki/Using-the-Compiler-API)
