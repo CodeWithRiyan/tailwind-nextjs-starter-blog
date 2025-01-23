@@ -1,0 +1,390 @@
+---
+title: 'React.js Component Lifecycle Guide'
+date: '2025-01-22'
+tags: ['react', 'lifecycle', 'components', 'hooks']
+summary: 'Comprehensive guide to React component lifecycle methods and hooks'
+---
+
+## React Component Lifecycle Phases
+
+### Class Components Lifecycle
+
+```javascript
+class ExampleComponent extends React.Component {
+  // Mounting Phase
+  constructor(props) {
+    super(props);
+    this.state = { count: 0 };
+    console.log('1. Constructor called');
+  }
+
+  static getDerivedStateFromProps(props, state) {
+    console.log('2. getDerivedStateFromProps called');
+    return null;
+  }
+
+  componentDidMount() {
+    console.log('4. componentDidMount called');
+    // Good for: API calls, subscriptions, DOM manipulations
+  }
+
+  // Updating Phase
+  shouldComponentUpdate(nextProps, nextState) {
+    console.log('5. shouldComponentUpdate called');
+    return true;
+  }
+
+  getSnapshotBeforeUpdate(prevProps, prevState) {
+    console.log('6. getSnapshotBeforeUpdate called');
+    return null;
+  }
+
+  componentDidUpdate(prevProps, prevState, snapshot) {
+    console.log('7. componentDidUpdate called');
+    // Good for: Network requests based on prop changes
+  }
+
+  // Unmounting Phase
+  componentWillUnmount() {
+    console.log('8. componentWillUnmount called');
+    // Good for: Cleanup (canceling network requests, subscriptions)
+  }
+
+  render() {
+    console.log('3. Render called');
+    return <div>Component Content</div>;
+  }
+}
+```
+
+### Functional Components with Hooks
+
+```javascript
+import React, { useState, useEffect, useLayoutEffect } from 'react';
+
+function ExampleFunctionalComponent({ data }) {
+  // State initialization (similar to constructor)
+  const [count, setCount] = useState(0);
+
+  // Runs after every render
+  useEffect(() => {
+    console.log('Component did mount/update');
+
+    // Cleanup function (runs before next effect or unmount)
+    return () => {
+      console.log('Cleanup - similar to componentWillUnmount');
+    };
+  });
+
+  // Runs only on mount (empty dependency array)
+  useEffect(() => {
+    console.log('Component did mount');
+    return () => {
+      console.log('Component will unmount');
+    };
+  }, []);
+
+  // Runs when 'data' prop changes
+  useEffect(() => {
+    console.log('Data changed:', data);
+  }, [data]);
+
+  // Runs synchronously after DOM mutations
+  useLayoutEffect(() => {
+    console.log('DOM mutations completed');
+  });
+
+  return <div>Count: {count}</div>;
+}
+```
+
+### Lifecycle Methods vs Hooks Comparison
+
+```javascript
+// Class Component Lifecycle
+class ClassComponent extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { data: null };
+  }
+
+  componentDidMount() {
+    fetchData();
+  }
+
+  componentDidUpdate(prevProps) {
+    if (prevProps.id !== this.props.id) {
+      fetchData();
+    }
+  }
+
+  componentWillUnmount() {
+    cleanup();
+  }
+}
+
+// Equivalent Functional Component with Hooks
+function FunctionalComponent({ id }) {
+  const [data, setData] = useState(null);
+
+  useEffect(() => {
+    fetchData();
+
+    return () => cleanup();
+  }, [id]);
+}
+```
+
+## Common Use Cases and Best Practices
+
+### Data Fetching
+
+```javascript
+function DataFetchingComponent({ id }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function fetchData() {
+      try {
+        setLoading(true);
+        const response = await fetch(`/api/data/${id}`);
+        const result = await response.json();
+        
+        if (mounted) {
+          setData(result);
+          setError(null);
+        }
+      } catch (err) {
+        if (mounted) {
+          setError(err.message);
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    }
+
+    fetchData();
+
+    return () => {
+      mounted = false;
+    };
+  }, [id]);
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
+  return <div>Data: {JSON.stringify(data)}</div>;
+}
+```
+
+### Event Listeners
+
+```javascript
+function EventListenerComponent() {
+  useEffect(() => {
+    function handleScroll() {
+      console.log('Window scrolled');
+    }
+
+    window.addEventListener('scroll', handleScroll);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
+  return <div style={{ height: '200vh' }}>Scroll me</div>;
+}
+```
+
+### Subscription Management
+
+```javascript
+function SubscriptionComponent({ channelId }) {
+  useEffect(() => {
+    const subscription = subscribeToChannel(channelId, {
+      onMessage: (message) => {
+        console.log('New message:', message);
+      },
+      onError: (error) => {
+        console.error('Subscription error:', error);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [channelId]);
+}
+```
+
+## Common Lifecycle Patterns
+
+### Conditional Fetching
+
+```javascript
+function ConditionalFetchComponent({ shouldFetch, id }) {
+  useEffect(() => {
+    if (!shouldFetch) return;
+
+    const fetchData = async () => {
+      // Fetch logic
+    };
+
+    fetchData();
+  }, [shouldFetch, id]);
+}
+```
+
+### Debounced Updates
+
+```javascript
+function DebouncedComponent({ searchTerm }) {
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      // Perform search
+      console.log('Searching for:', searchTerm);
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm]);
+}
+```
+
+## Performance Optimization
+
+### Using Memo
+
+```javascript
+const MemoizedComponent = React.memo(function MyComponent({ data }) {
+  return <div>{data.text}</div>;
+}, (prevProps, nextProps) => {
+  return prevProps.data.id === nextProps.data.id;
+});
+```
+
+### Callback Memoization
+
+```javascript
+function CallbackComponent() {
+  const [count, setCount] = useState(0);
+
+  const memoizedCallback = useCallback(() => {
+    console.log('Count:', count);
+  }, [count]);
+
+  return (
+    <ExpensiveChild onCallback={memoizedCallback} />
+  );
+}
+```
+
+## Error Handling
+
+```javascript
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('Error caught:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return <h1>Something went wrong.</h1>;
+    }
+
+    return this.props.children;
+  }
+}
+```
+
+## Custom Hooks for Lifecycle Management
+
+```javascript
+function useMount(callback) {
+  useEffect(() => {
+    callback();
+  }, []);
+}
+
+function useUnmount(callback) {
+  useEffect(() => {
+    return () => callback();
+  }, []);
+}
+
+function useUpdateEffect(callback, dependencies) {
+  const firstRenderRef = useRef(true);
+
+  useEffect(() => {
+    if (firstRenderRef.current) {
+      firstRenderRef.current = false;
+      return;
+    }
+    return callback();
+  }, dependencies);
+}
+```
+
+## Testing Lifecycle Methods
+
+```javascript
+import { render, act } from '@testing-library/react';
+
+test('component lifecycle', async () => {
+  const { rerender, unmount } = render(<MyComponent id={1} />);
+
+  // Test mount
+  expect(screen.getByText('Initial State')).toBeInTheDocument();
+
+  // Test update
+  await act(async () => {
+    rerender(<MyComponent id={2} />);
+  });
+
+  // Test unmount
+  unmount();
+});
+```
+
+Remember:
+- Use `useEffect` for side effects
+- Clean up subscriptions and listeners
+- Handle async operations properly
+- Consider performance implications
+- Test lifecycle behavior thoroughly
+
+## Learning Resources
+
+### Official Documentation
+- [React Official Documentation](https://react.dev)
+- [React Hooks API Reference](https://react.dev/reference/react)
+- [React Class Component Lifecycle](https://react.dev/reference/react/Component)
+
+### Online Courses & Tutorials
+- [React Lifecycle Methods - A Deep Dive](https://www.udemy.com/course/react-lifecycle-methods)
+- [Understanding React's useEffect](https://overreacted.io/a-complete-guide-to-useeffect/)
+- [Kent C. Dodds Blog - useEffect Complete Guide](https://kentcdodds.com/blog/useeffect-vs-uselayouteffect)
+
+### Tools
+- [React Developer Tools](https://chrome.google.com/webstore/detail/react-developer-tools)
+- [Create React App](https://create-react-app.dev)
+- [CodeSandbox React Templates](https://codesandbox.io/s/new)
+
+### Testing Resources
+- [Testing Library Documentation](https://testing-library.com/docs/react-testing-library/intro)
+- [Jest Documentation](https://jestjs.io/docs/tutorial-react)
+- [React Testing Best Practices](https://reactjs.org/docs/testing.html)
