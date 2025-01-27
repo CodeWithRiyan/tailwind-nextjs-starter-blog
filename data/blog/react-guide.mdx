@@ -1,0 +1,486 @@
+---
+title: 'React.js Complete Guide'
+date: '2025-01-25'
+tags: ['react', 'javascript', 'frontend']
+summary: 'Comprehensive guide to React.js features, patterns, and best practices'
+---
+
+## Core Concepts
+
+### Components and Props
+
+```jsx
+// Functional Component
+function Welcome(props) {
+  return <h1>Hello, {props.name}</h1>;
+}
+
+// Class Component
+class Welcome extends React.Component {
+  render() {
+    return <h1>Hello, {this.props.name}</h1>;
+  }
+}
+
+// Props Example
+const element = <Welcome name="John" />;
+```
+
+### State and Lifecycle
+
+```jsx
+function Counter() {
+  const [count, setCount] = useState(0);
+  
+  useEffect(() => {
+    document.title = `Count: ${count}`;
+    
+    return () => {
+      // cleanup
+    };
+  }, [count]);
+  
+  return (
+    <div>
+      <p>Count: {count}</p>
+      <button onClick={() => setCount(count + 1)}>
+        Increment
+      </button>
+    </div>
+  );
+}
+```
+
+### Hooks
+
+```jsx
+// useState
+function NameForm() {
+  const [name, setName] = useState('');
+  return (
+    <input 
+      value={name}
+      onChange={e => setName(e.target.value)}
+    />
+  );
+}
+
+// useEffect
+function DataFetcher() {
+  const [data, setData] = useState(null);
+  
+  useEffect(() => {
+    fetchData().then(setData);
+  }, []);
+  
+  return data ? <div>{data}</div> : <div>Loading...</div>;
+}
+
+// useContext
+const ThemeContext = React.createContext('light');
+
+function ThemedButton() {
+  const theme = useContext(ThemeContext);
+  return <button className={theme}>Themed Button</button>;
+}
+
+// useReducer
+function reducer(state, action) {
+  switch (action.type) {
+    case 'increment':
+      return {count: state.count + 1};
+    case 'decrement':
+      return {count: state.count - 1};
+    default:
+      throw new Error();
+  }
+}
+
+function Counter() {
+  const [state, dispatch] = useReducer(reducer, { count: 0 });
+  return (
+    <>
+      Count: {state.count}
+      <button onClick={() => dispatch({type: 'increment'})}>+</button>
+      <button onClick={() => dispatch({type: 'decrement'})}>-</button>
+    </>
+  );
+}
+```
+
+### Event Handling
+
+```jsx
+function ActionButton() {
+  const handleClick = (e) => {
+    e.preventDefault();
+    console.log('Button clicked');
+  };
+  
+  return (
+    <button onClick={handleClick}>
+      Click me
+    </button>
+  );
+}
+```
+
+## Advanced Patterns
+
+### Context API
+
+```jsx
+// Create context
+const ThemeContext = React.createContext({
+  theme: 'light',
+  toggleTheme: () => {}
+});
+
+// Provider
+function ThemeProvider({ children }) {
+  const [theme, setTheme] = useState('light');
+  
+  const toggleTheme = () => {
+    setTheme(theme === 'light' ? 'dark' : 'light');
+  };
+  
+  return (
+    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+      {children}
+    </ThemeContext.Provider>
+  );
+}
+
+// Consumer
+function ThemedComponent() {
+  const { theme, toggleTheme } = useContext(ThemeContext);
+  return (
+    <div className={theme}>
+      <button onClick={toggleTheme}>Toggle Theme</button>
+    </div>
+  );
+}
+```
+
+### Custom Hooks
+
+```jsx
+// Custom Hook for form handling
+function useForm(initialValues) {
+  const [values, setValues] = useState(initialValues);
+  
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setValues(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+  
+  const resetForm = () => {
+    setValues(initialValues);
+  };
+  
+  return [values, handleChange, resetForm];
+}
+
+// Usage
+function SignupForm() {
+  const [values, handleChange, resetForm] = useForm({
+    username: '',
+    email: '',
+    password: ''
+  });
+  
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    console.log(values);
+    resetForm();
+  };
+  
+  return (
+    <form onSubmit={handleSubmit}>
+      <input
+        name="username"
+        value={values.username}
+        onChange={handleChange}
+      />
+      {/* Other fields */}
+    </form>
+  );
+}
+```
+
+### HOC (Higher Order Components)
+
+```jsx
+// HOC Example
+function withSubscription(WrappedComponent, selectData) {
+  return function(props) {
+    const [data, setData] = useState(null);
+    
+    useEffect(() => {
+      const subscription = DataSource.subscribe(data => {
+        setData(selectData(data, props));
+      });
+      
+      return () => subscription.unsubscribe();
+    }, [props]);
+    
+    return <WrappedComponent data={data} {...props} />;
+  };
+}
+
+// Usage
+const CommentListWithSubscription = withSubscription(
+  CommentList,
+  (DataSource, props) => DataSource.getComments()
+);
+```
+
+### Render Props
+
+```jsx
+class Mouse extends React.Component {
+  state = { x: 0, y: 0 };
+  
+  handleMouseMove = (event) => {
+    this.setState({
+      x: event.clientX,
+      y: event.clientY
+    });
+  };
+  
+  render() {
+    return (
+      <div onMouseMove={this.handleMouseMove}>
+        {this.props.render(this.state)}
+      </div>
+    );
+  }
+}
+
+// Usage
+<Mouse render={({ x, y }) => (
+  <h1>Mouse position: {x}, {y}</h1>
+)}/>
+```
+
+## Performance Optimization
+
+### React.memo
+
+```jsx
+const MemoizedComponent = React.memo(function MyComponent(props) {
+  return (
+    <div>{props.name}</div>
+  );
+});
+```
+
+### useMemo and useCallback
+
+```jsx
+function ExpensiveComponent({ data, onItemSelect }) {
+  // Memoize expensive calculations
+  const processedData = useMemo(() => {
+    return expensiveOperation(data);
+  }, [data]);
+  
+  // Memoize callbacks
+  const handleSelect = useCallback((item) => {
+    onItemSelect(item.id);
+  }, [onItemSelect]);
+  
+  return (
+    <div>
+      {processedData.map(item => (
+        <Item 
+          key={item.id}
+          item={item}
+          onSelect={handleSelect}
+        />
+      ))}
+    </div>
+  );
+}
+```
+
+### Code Splitting
+
+```jsx
+// Dynamic Import
+const OtherComponent = React.lazy(() => import('./OtherComponent'));
+
+function MyComponent() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <OtherComponent />
+    </Suspense>
+  );
+}
+```
+
+## State Management
+
+### Redux Integration
+
+```jsx
+// Actions
+const increment = () => ({
+  type: 'INCREMENT'
+});
+
+// Reducer
+function counterReducer(state = 0, action) {
+  switch (action.type) {
+    case 'INCREMENT':
+      return state + 1;
+    default:
+      return state;
+  }
+}
+
+// Component
+function Counter({ count, increment }) {
+  return (
+    <div>
+      <p>Count: {count}</p>
+      <button onClick={increment}>Increment</button>
+    </div>
+  );
+}
+
+// Connect to Redux
+export default connect(
+  state => ({ count: state }),
+  { increment }
+)(Counter);
+```
+
+### Zustand Example
+
+```jsx
+import create from 'zustand';
+
+const useStore = create((set) => ({
+  count: 0,
+  increment: () => set(state => ({ count: state.count + 1 })),
+  decrement: () => set(state => ({ count: state.count - 1 }))
+}));
+
+function Counter() {
+  const { count, increment } = useStore();
+  return (
+    <button onClick={increment}>
+      Count: {count}
+    </button>
+  );
+}
+```
+
+## Testing
+
+```jsx
+// Component Test
+import { render, fireEvent } from '@testing-library/react';
+
+test('increments counter', () => {
+  const { getByText } = render(<Counter />);
+  const button = getByText(/increment/i);
+  
+  fireEvent.click(button);
+  
+  expect(getByText(/count: 1/i)).toBeInTheDocument();
+});
+
+// Hook Test
+import { renderHook, act } from '@testing-library/react-hooks';
+
+test('useCounter', () => {
+  const { result } = renderHook(() => useCounter());
+  
+  act(() => {
+    result.current.increment();
+  });
+  
+  expect(result.current.count).toBe(1);
+});
+```
+
+## Error Handling
+
+```jsx
+class ErrorBoundary extends React.Component {
+  state = { hasError: false };
+  
+  static getDerivedStateFromError(error) {
+    return { hasError: true };
+  }
+  
+  componentDidCatch(error, errorInfo) {
+    logErrorToService(error, errorInfo);
+  }
+  
+  render() {
+    if (this.state.hasError) {
+      return <h1>Something went wrong.</h1>;
+    }
+    return this.props.children;
+  }
+}
+
+// Usage
+<ErrorBoundary>
+  <MyComponent />
+</ErrorBoundary>
+```
+
+## Routing
+
+```jsx
+import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
+
+function App() {
+  return (
+    <BrowserRouter>
+      <nav>
+        <Link to="/">Home</Link>
+        <Link to="/about">About</Link>
+      </nav>
+      
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/users/:id" element={<UserProfile />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
+```
+
+## Resources
+
+### Official Documentation
+- [React Documentation](https://react.dev)
+- [Create React App](https://create-react-app.dev)
+- [React Router](https://reactrouter.com)
+
+### Learning Resources
+- [React Dev Community](https://dev.to/t/react)
+- [React Patterns](https://reactpatterns.com)
+- [React Testing Library](https://testing-library.com/docs/react-testing-library/intro)
+
+### Tools
+- [React Developer Tools](https://chrome.google.com/webstore/detail/react-developer-tools)
+- [Redux DevTools](https://github.com/reduxjs/redux-devtools)
+- [ESLint React Plugin](https://github.com/jsx-eslint/eslint-plugin-react)
+
+### Popular Libraries
+- [Redux](https://redux.js.org)
+- [MobX](https://mobx.js.org)
+- [React Query](https://tanstack.com/query)
+- [Styled Components](https://styled-components.com)
+- [Material-UI](https://mui.com)
+- [Chakra UI](https://chakra-ui.com)
