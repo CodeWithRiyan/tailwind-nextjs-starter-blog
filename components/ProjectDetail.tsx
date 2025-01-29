@@ -130,7 +130,7 @@ const ProjectDetail = ({ params }) => {
                   <h2 className="mb-4 text-2xl font-bold text-gray-900 dark:text-gray-100">
                     Challenges
                   </h2>
-                  <ul className="list-inside list-disc space-y-2 text-gray-600 dark:text-gray-400">
+                  <ul className="ml-4 list-disc space-y-2 text-gray-600 dark:text-gray-400">
                     {project.challenges.map((challenge, index) => (
                       <li key={index}>{challenge}</li>
                     ))}
@@ -141,7 +141,7 @@ const ProjectDetail = ({ params }) => {
                   <h2 className="mb-4 text-2xl font-bold text-gray-900 dark:text-gray-100">
                     Solutions
                   </h2>
-                  <ul className="list-inside list-disc space-y-2 text-gray-600 dark:text-gray-400">
+                  <ul className="ml-4 list-disc space-y-2 text-gray-600 dark:text-gray-400">
                     {project.solutions.map((solution, index) => (
                       <li key={index}>{solution}</li>
                     ))}
