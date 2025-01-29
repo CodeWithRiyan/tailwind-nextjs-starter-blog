@@ -1,13 +1,8 @@
 import { genPageMetadata } from 'app/seo'
 import ProjectDetail from '@/components/ProjectDetail'
-import { projects } from '@/data/projectsData'
-import type { Metadata } from 'next'
+import { projects } from '@/data/projectsData' // We'll create this file next
 
-type Props = {
-  params: { slug: string }
-}
-
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export const generateMetadata = ({ params }) => {
   const project = projects.find((p) => p.slug === params.slug)
   return genPageMetadata({
     title: project?.title || 'Project Not Found',
@@ -15,12 +10,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   })
 }
 
-export function generateStaticParams() {
+export const generateStaticParams = () => {
   return projects.map((project) => ({
     slug: project.slug,
   }))
 }
 
-export default function Page({ params }: Props) {
+export default function Page({ params }) {
   return <ProjectDetail params={params} />
 }
