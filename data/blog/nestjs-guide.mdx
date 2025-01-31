@@ -1,0 +1,495 @@
+---
+title: 'Nest.js Complete Guide'
+date: '2025-01-26'
+tags: ['nestjs', 'typescript', 'backend', 'node.js']
+summary: 'Comprehensive guide to Nest.js framework features, patterns, and best practices'
+---
+
+## Core Concepts
+
+### Controllers
+
+```typescript
+// Basic Controller
+import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+
+@Controller('users')
+export class UsersController {
+  @Get()
+  findAll() {
+    return ['user1', 'user2'];
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return `User ${id}`;
+  }
+
+  @Post()
+  create(@Body() createUserDto: CreateUserDto) {
+    return 'Created user';
+  }
+}
+
+// DTOs (Data Transfer Objects)
+export class CreateUserDto {
+  readonly name: string;
+  readonly email: string;
+  readonly password: string;
+}
+
+// Validation Pipe
+import { IsEmail, IsNotEmpty, MinLength } from 'class-validator';
+
+export class CreateUserDto {
+  @IsNotEmpty()
+  readonly name: string;
+
+  @IsEmail()
+  readonly email: string;
+
+  @MinLength(6)
+  readonly password: string;
+}
+```
+
+### Providers (Services)
+
+```typescript
+// Service
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { User } from './user.entity';
+
+@Injectable()
+export class UsersService {
+  constructor(
+    @InjectRepository(User)
+    private usersRepository: Repository<User>,
+  ) {}
+
+  async findAll(): Promise<User[]> {
+    return this.usersRepository.find();
+  }
+
+  async findOne(id: number): Promise<User> {
+    return this.usersRepository.findOne({ where: { id } });
+  }
+
+  async create(createUserDto: CreateUserDto): Promise<User> {
+    const user = this.usersRepository.create(createUserDto);
+    return this.usersRepository.save(user);
+  }
+}
+
+// Module
+import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+
+@Module({
+  imports: [TypeOrmModule.forFeature([User])],
+  providers: [UsersService],
+  controllers: [UsersController],
+})
+export class UsersModule {}
+```
+
+### Middleware
+
+```typescript
+// Custom Middleware
+import { Injectable, NestMiddleware } from '@nestjs/common';
+import { Request, Response, NextFunction } from 'express';
+
+@Injectable()
+export class LoggerMiddleware implements NestMiddleware {
+  use(req: Request, res: Response, next: NextFunction) {
+    console.log(`Request ${req.method} ${req.url}`);
+    next();
+  }
+}
+
+// Applying Middleware
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
+
+@Module({})
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(LoggerMiddleware)
+      .forRoutes('users');
+  }
+}
+```
+
+### Guards
+
+```typescript
+// Authentication Guard
+import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
+import { Observable } from 'rxjs';
+
+@Injectable()
+export class AuthGuard implements CanActivate {
+  canActivate(
+    context: ExecutionContext,
+  ): boolean | Promise<boolean> | Observable<boolean> {
+    const request = context.switchToHttp().getRequest();
+    return this.validateRequest(request);
+  }
+
+  private validateRequest(request: any): boolean {
+    // Add authentication logic here
+    return true;
+  }
+}
+
+// Using Guards
+@Controller('users')
+@UseGuards(AuthGuard)
+export class UsersController {
+  // Protected routes
+}
+```
+
+### Interceptors
+
+```typescript
+// Transform Interceptor
+import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
+
+export interface Response<T> {
+  data: T;
+}
+
+@Injectable()
+export class TransformInterceptor<T> implements NestInterceptor<T, Response<T>> {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<Response<T>> {
+    return next.handle().pipe(map(data => ({ data })));
+  }
+}
+
+// Cache Interceptor
+@Injectable()
+export class CacheInterceptor implements NestInterceptor {
+  constructor(private cacheService: CacheService) {}
+
+  async intercept(context: ExecutionContext, next: CallHandler): Promise<Observable<any>> {
+    const key = this.generateCacheKey(context);
+    const cachedResponse = await this.cacheService.get(key);
+
+    if (cachedResponse) {
+      return of(cachedResponse);
+    }
+
+    return next.handle().pipe(
+      tap(response => this.cacheService.set(key, response))
+    );
+  }
+}
+```
+
+## Database Integration
+
+### TypeORM Configuration
+
+```typescript
+// Entity
+import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+
+@Entity()
+export class User {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column()
+  name: string;
+
+  @Column({ unique: true })
+  email: string;
+
+  @Column()
+  password: string;
+
+  @Column({ default: true })
+  isActive: boolean;
+}
+
+// Module Configuration
+import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+
+@Module({
+  imports: [
+    TypeOrmModule.forRoot({
+      type: 'postgres',
+      host: 'localhost',
+      port: 5432,
+      username: 'postgres',
+      password: 'password',
+      database: 'mydb',
+      entities: [User],
+      synchronize: true,
+    }),
+  ],
+})
+export class AppModule {}
+```
+
+### Repository Pattern
+
+```typescript
+// Custom Repository
+import { EntityRepository, Repository } from 'typeorm';
+import { User } from './user.entity';
+
+@EntityRepository(User)
+export class UserRepository extends Repository<User> {
+  async findByEmail(email: string): Promise<User> {
+    return this.findOne({ where: { email } });
+  }
+
+  async createUser(createUserDto: CreateUserDto): Promise<User> {
+    const user = this.create(createUserDto);
+    await this.save(user);
+    return user;
+  }
+}
+```
+
+## Authentication
+
+### JWT Implementation
+
+```typescript
+// Auth Service
+import { Injectable } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+
+@Injectable()
+export class AuthService {
+  constructor(
+    private usersService: UsersService,
+    private jwtService: JwtService,
+  ) {}
+
+  async validateUser(email: string, password: string): Promise<any> {
+    const user = await this.usersService.findByEmail(email);
+    if (user && await bcrypt.compare(password, user.password)) {
+      const { password, ...result } = user;
+      return result;
+    }
+    return null;
+  }
+
+  async login(user: any) {
+    const payload = { email: user.email, sub: user.id };
+    return {
+      access_token: this.jwtService.sign(payload),
+    };
+  }
+}
+
+// JWT Strategy
+import { ExtractJwt, Strategy } from 'passport-jwt';
+import { PassportStrategy } from '@nestjs/passport';
+
+@Injectable()
+export class JwtStrategy extends PassportStrategy(Strategy) {
+  constructor() {
+    super({
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      ignoreExpiration: false,
+      secretOrKey: 'your-secret-key',
+    });
+  }
+
+  async validate(payload: any) {
+    return { userId: payload.sub, email: payload.email };
+  }
+}
+```
+
+## Exception Handling
+
+```typescript
+// Custom Exception Filter
+import { ExceptionFilter, Catch, ArgumentsHost, HttpException } from '@nestjs/common';
+import { Response } from 'express';
+
+@Catch(HttpException)
+export class HttpExceptionFilter implements ExceptionFilter {
+  catch(exception: HttpException, host: ArgumentsHost) {
+    const ctx = host.switchToHttp();
+    const response = ctx.getResponse<Response>();
+    const status = exception.getStatus();
+    const error = exception.getResponse();
+
+    response
+      .status(status)
+      .json({
+        statusCode: status,
+        timestamp: new Date().toISOString(),
+        error: error,
+      });
+  }
+}
+
+// Global Exception Filter
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  app.useGlobalFilters(new HttpExceptionFilter());
+  await app.listen(3000);
+}
+```
+
+## Validation and Pipes
+
+```typescript
+// Custom Validation Pipe
+import { PipeTransform, Injectable, ArgumentMetadata, BadRequestException } from '@nestjs/common';
+import { validate } from 'class-validator';
+import { plainToClass } from 'class-transformer';
+
+@Injectable()
+export class ValidationPipe implements PipeTransform<any> {
+  async transform(value: any, { metatype }: ArgumentMetadata) {
+    if (!metatype || !this.toValidate(metatype)) {
+      return value;
+    }
+    const object = plainToClass(metatype, value);
+    const errors = await validate(object);
+    if (errors.length > 0) {
+      throw new BadRequestException('Validation failed');
+    }
+    return value;
+  }
+
+  private toValidate(metatype: Function): boolean {
+    const types: Function[] = [String, Boolean, Number, Array, Object];
+    return !types.includes(metatype);
+  }
+}
+```
+
+## WebSockets
+
+```typescript
+// Gateway
+import { WebSocketGateway, SubscribeMessage, MessageBody } from '@nestjs/websockets';
+
+@WebSocketGateway()
+export class ChatGateway {
+  @SubscribeMessage('message')
+  handleMessage(@MessageBody() data: string): string {
+    return data;
+  }
+
+  @SubscribeMessage('joinRoom')
+  handleJoinRoom(@MessageBody() data: any) {
+    // Handle room joining logic
+  }
+}
+
+// Client Connection
+import { WebSocketGateway, OnGatewayConnection, OnGatewayDisconnect } from '@nestjs/websockets';
+import { Socket } from 'socket.io';
+
+@WebSocketGateway()
+export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
+  handleConnection(client: Socket) {
+    console.log(`Client connected: ${client.id}`);
+  }
+
+  handleDisconnect(client: Socket) {
+    console.log(`Client disconnected: ${client.id}`);
+  }
+}
+```
+
+## Testing
+
+```typescript
+// Unit Testing
+import { Test, TestingModule } from '@nestjs/testing';
+import { UsersController } from './users.controller';
+import { UsersService } from './users.service';
+
+describe('UsersController', () => {
+  let controller: UsersController;
+  let service: UsersService;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      controllers: [UsersController],
+      providers: [UsersService],
+    }).compile();
+
+    controller = module.get<UsersController>(UsersController);
+    service = module.get<UsersService>(UsersService);
+  });
+
+  it('should be defined', () => {
+    expect(controller).toBeDefined();
+  });
+
+  it('should return an array of users', async () => {
+    const result = ['user1', 'user2'];
+    jest.spyOn(service, 'findAll').mockImplementation(() => result);
+
+    expect(await controller.findAll()).toBe(result);
+  });
+});
+
+// E2E Testing
+import * as request from 'supertest';
+import { Test } from '@nestjs/testing';
+import { AppModule } from './../src/app.module';
+import { INestApplication } from '@nestjs/common';
+
+describe('AppController (e2e)', () => {
+  let app: INestApplication;
+
+  beforeAll(async () => {
+    const moduleFixture = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = moduleFixture.createNestApplication();
+    await app.init();
+  });
+
+  it('/users (GET)', () => {
+    return request(app.getHttpServer())
+      .get('/users')
+      .expect(200)
+      .expect('Content-Type', /json/)
+      .expect([]);
+  });
+});
+```
+
+## Resources
+
+### Official Documentation
+- [Nest.js Documentation](https://docs.nestjs.com/)
+- [Nest.js GitHub Repository](https://github.com/nestjs/nest)
+- [Nest.js Courses](https://courses.nestjs.com/)
+
+### Learning Resources
+- [Nest.js Fundamentals Course](https://learn.nestjs.com/)
+- [Official Nest.js YouTube Channel](https://www.youtube.com/c/NestJS)
+- [Awesome Nest.js](https://github.com/juliandavidmr/awesome-nestjs)
+
+### Tools and Extensions
+- [Nest CLI](https://docs.nestjs.com/cli/overview)
+- [VSCode Nest.js Snippets](https://marketplace.visualstudio.com/items?itemName=ashinzekene.nestjs)
+- [Nest.js TypeORM](https://github.com/nestjs/typeorm)
+
+### Community Resources
+- [Nest.js Discord](https://discord.gg/nestjs)
+- [Nest.js Stack Overflow](https://stackoverflow.com/questions/tagged/nestjs)
+- [Nest.js Medium Publication](https://medium.com/nestjs)

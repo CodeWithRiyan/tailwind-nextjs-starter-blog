@@ -1,0 +1,420 @@
+---
+title: 'Understanding Ollama and Deepseek: Integration with React'
+date: '2025-01-31'
+tags: ['ai', 'ollama', 'deepseek', 'react', 'typescript']
+summary: 'A comprehensive guide to integrating Ollama and Deepseek AI tools with React applications'
+---
+
+## Ollama
+
+### Overview
+
+Ollama is an open-source tool that allows users to run large language models (LLMs) locally. This guide focuses on integrating Ollama with React applications.
+
+### Basic React Integration
+
+```tsx
+// OllamaClient.tsx
+import React, { useState } from 'react';
+import axios from 'axios';
+
+interface OllamaResponse {
+  response: string;
+  context: number[];
+}
+
+const OllamaClient: React.FC = () => {
+  const [prompt, setPrompt] = useState('');
+  const [response, setResponse] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const queryOllama = async () => {
+    setLoading(true);
+    try {
+      const result = await axios.post('http://localhost:11434/api/generate', {
+        model: 'llama2',
+        prompt: prompt
+      });
+      setResponse(result.data.response);
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="p-4">
+      <textarea
+        className="w-full p-2 border rounded"
+        value={prompt}
+        onChange={(e) => setPrompt(e.target.value)}
+        placeholder="Enter your prompt..."
+      />
+      <button
+        className="mt-2 px-4 py-2 bg-blue-500 text-white rounded"
+        onClick={queryOllama}
+        disabled={loading}
+      >
+        {loading ? 'Processing...' : 'Generate'}
+      </button>
+      {response && (
+        <div className="mt-4 p-4 border rounded">
+          <pre>{response}</pre>
+        </div>
+      )}
+    </div>
+  );
+};
+```
+
+### Custom Hook for Ollama
+
+```tsx
+// useOllama.ts
+import { useState, useCallback } from 'react';
+import axios from 'axios';
+
+interface OllamaConfig {
+  model?: string;
+  baseUrl?: string;
+}
+
+export const useOllama = (config: OllamaConfig = {}) => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const generate = useCallback(async (prompt: string) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const response = await axios.post(`${config.baseUrl || 'http://localhost:11434'}/api/generate`, {
+        model: config.model || 'llama2',
+        prompt
+      });
+      return response.data.response;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, [config]);
+
+  return { generate, loading, error };
+};
+
+// Usage Example
+const AIChat: React.FC = () => {
+  const { generate, loading, error } = useOllama({
+    model: 'codellama',
+    baseUrl: 'http://localhost:11434'
+  });
+
+  const handleGenerate = async () => {
+    const response = await generate('Write a React component');
+    console.log(response);
+  };
+};
+```
+
+### Model Management Component
+
+```tsx
+// OllamaModels.tsx
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+
+interface Model {
+  name: string;
+  size: number;
+  modified: string;
+}
+
+const OllamaModels: React.FC = () => {
+  const [models, setModels] = useState<Model[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchModels = async () => {
+      try {
+        const response = await axios.get('http://localhost:11434/api/tags');
+        setModels(response.data.models);
+      } catch (error) {
+        console.error('Error fetching models:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchModels();
+  }, []);
+
+  return (
+    <div className="p-4">
+      <h2 className="text-xl font-bold mb-4">Installed Models</h2>
+      {loading ? (
+        <div>Loading models...</div>
+      ) : (
+        <div className="grid gap-4">
+          {models.map((model) => (
+            <div key={model.name} className="p-4 border rounded">
+              <h3 className="font-bold">{model.name}</h3>
+              <p>Size: {(model.size / 1024 / 1024 / 1024).toFixed(2)} GB</p>
+              <p>Modified: {new Date(model.modified).toLocaleDateString()}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+```
+
+## Deepseek
+
+### React Integration
+
+```tsx
+// DeepseekClient.tsx
+import React, { useState } from 'react';
+import axios from 'axios';
+
+interface DeepseekProps {
+  apiKey: string;
+  model?: string;
+}
+
+const DeepseekClient: React.FC<DeepseekProps> = ({ apiKey, model = 'deepseek-coder' }) => {
+  const [prompt, setPrompt] = useState('');
+  const [response, setResponse] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const generateResponse = async () => {
+    setLoading(true);
+    try {
+      const result = await axios.post(
+        'https://api.deepseek.com/v1/completions',
+        {
+          model,
+          prompt,
+          max_tokens: 500
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      setResponse(result.data.choices[0].text);
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="p-4">
+      <textarea
+        className="w-full p-2 border rounded"
+        value={prompt}
+        onChange={(e) => setPrompt(e.target.value)}
+        placeholder="Enter your prompt..."
+      />
+      <button
+        className="mt-2 px-4 py-2 bg-blue-500 text-white rounded"
+        onClick={generateResponse}
+        disabled={loading}
+      >
+        {loading ? 'Generating...' : 'Generate'}
+      </button>
+      {response && (
+        <div className="mt-4 p-4 border rounded bg-gray-50">
+          <pre className="whitespace-pre-wrap">{response}</pre>
+        </div>
+      )}
+    </div>
+  );
+};
+```
+
+### Custom Hook for Deepseek
+
+```tsx
+// useDeepseek.ts
+import { useState, useCallback } from 'react';
+import axios from 'axios';
+
+interface DeepseekConfig {
+  apiKey: string;
+  model?: string;
+  maxTokens?: number;
+}
+
+export const useDeepseek = (config: DeepseekConfig) => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const generate = useCallback(async (prompt: string) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await axios.post(
+        'https://api.deepseek.com/v1/completions',
+        {
+          model: config.model || 'deepseek-coder',
+          prompt,
+          max_tokens: config.maxTokens || 500
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${config.apiKey}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      return response.data.choices[0].text;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, [config]);
+
+  return { generate, loading, error };
+};
+```
+
+### Code Generation Component
+
+```tsx
+// CodeGenerator.tsx
+import React, { useState } from 'react';
+import { useDeepseek } from './useDeepseek';
+import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { docco } from 'react-syntax-highlighter/dist/esm/styles/hljs';
+
+interface CodeGeneratorProps {
+  apiKey: string;
+}
+
+const CodeGenerator: React.FC<CodeGeneratorProps> = ({ apiKey }) => {
+  const [prompt, setPrompt] = useState('');
+  const [code, setCode] = useState('');
+  
+  const { generate, loading, error } = useDeepseek({
+    apiKey,
+    model: 'deepseek-coder',
+    maxTokens: 1000
+  });
+
+  const handleGenerate = async () => {
+    const response = await generate(prompt);
+    if (response) {
+      setCode(response);
+    }
+  };
+
+  return (
+    <div className="p-4">
+      <div className="mb-4">
+        <label className="block text-sm font-medium mb-2">
+          Describe the code you want to generate:
+        </label>
+        <textarea
+          className="w-full p-2 border rounded"
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          rows={4}
+        />
+      </div>
+      <button
+        className="px-4 py-2 bg-blue-500 text-white rounded"
+        onClick={handleGenerate}
+        disabled={loading}
+      >
+        {loading ? 'Generating...' : 'Generate Code'}
+      </button>
+      {error && (
+        <div className="mt-4 p-4 border border-red-500 rounded bg-red-50 text-red-700">
+          {error}
+        </div>
+      )}
+      {code && (
+        <div className="mt-4">
+          <SyntaxHighlighter language="typescript" style={docco}>
+            {code}
+          </SyntaxHighlighter>
+        </div>
+      )}
+    </div>
+  );
+};
+```
+
+## Comparison and Best Practices
+
+### Context Provider Pattern
+
+```tsx
+// AIContext.tsx
+import React, { createContext, useContext, ReactNode } from 'react';
+import { useOllama } from './useOllama';
+import { useDeepseek } from './useDeepseek';
+
+interface AIContextType {
+  ollama: ReturnType<typeof useOllama>;
+  deepseek: ReturnType<typeof useDeepseek>;
+}
+
+const AIContext = createContext<AIContextType | null>(null);
+
+export const AIProvider: React.FC<{
+  children: ReactNode;
+  deepseekApiKey: string;
+}> = ({ children, deepseekApiKey }) => {
+  const ollama = useOllama();
+  const deepseek = useDeepseek({ apiKey: deepseekApiKey });
+
+  return (
+    <AIContext.Provider value={{ ollama, deepseek }}>
+      {children}
+    </AIContext.Provider>
+  );
+};
+
+export const useAI = () => {
+  const context = useContext(AIContext);
+  if (!context) {
+    throw new Error('useAI must be used within an AIProvider');
+  }
+  return context;
+};
+```
+
+## Resources
+
+### Official Documentation
+- [Ollama Documentation](https://ollama.ai/docs)
+- [Deepseek Documentation](https://deepseek.com/docs)
+
+### React Integration Resources
+- [React Query](https://tanstack.com/query/latest) - For managing API states
+- [Axios](https://axios-http.com/) - For API requests
+- [React Syntax Highlighter](https://www.npmjs.com/package/react-syntax-highlighter)
+
+### Development Tools
+- [VSCode Extensions for AI Development](https://marketplace.visualstudio.com/search?term=AI%20development)
+- [React Developer Tools](https://chrome.google.com/webstore/detail/react-developer-tools)
+
+### Security Best Practices
+- Store API keys in environment variables
+- Implement rate limiting
+- Sanitize inputs and outputs
+- Use HTTPS for API calls
+- Implement proper error handling
