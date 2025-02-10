@@ -93,11 +93,7 @@ module.exports = () => {
       config.module.rules.push({
         test: /\.svg$/,
         use: ['@svgr/webpack'],
-      }),
-      config.module.rules.push({
-        test: /\.css$/i,
-        use: ["postcss-loader"],
-      });
+      })
 
       return config
     },
