@@ -3,7 +3,8 @@ const siteMetadata = {
   title: 'Riyan.id - Custom Software Development',
   author: 'Muhamad Riyan',
   headerTitle: 'Software House',
-  description: "Riyan.id specializes in custom software development, delivering innovative solutions that meet your unique business needs. Let's build your vision together!",
+  description:
+    "Riyan.id specializes in custom software development, delivering innovative solutions that meet your unique business needs. Let's build your vision together!",
   language: 'en-us',
   theme: 'system', // system, dark or light
   siteUrl: 'https://riyan.id',
@@ -31,7 +32,6 @@ const siteMetadata = {
     // content security policy in the `next.config.js` file.
     // supports Plausible, Simple Analytics, Umami, Posthog or Google Analytics.
     umamiAnalytics: {
-      
       // We use an env variable for this site to avoid other users cloning our analytics ID
       // umamiWebsiteId: process.env.NEXT_UMAMI_ID, // e.g. 123e4567-e89b-12d3-a456-426614174000
       // You may also need to overwrite the script if you're storing data in the US - ex:
