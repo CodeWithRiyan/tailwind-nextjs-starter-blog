@@ -12,7 +12,7 @@ const compat = new FlatCompat({
   baseDirectory: __dirname,
 })
 
-export default [
+const config = [
   {
     ignores: [],
   },
@@ -48,7 +48,7 @@ export default [
     },
 
     rules: {
-      'prettier/prettier': 'error',
+      'prettier/prettier': 'off',
       'react/react-in-jsx-scope': 'off',
 
       'jsx-a11y/anchor-is-valid': [
@@ -67,4 +67,6 @@ export default [
       '@typescript-eslint/ban-ts-comment': 'off',
     },
   },
-]
+];
+
+export default config;
