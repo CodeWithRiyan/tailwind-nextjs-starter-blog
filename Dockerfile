@@ -11,10 +11,11 @@ RUN corepack enable
 WORKDIR /app
 
 # Salin package.json dan lockfile terlebih dahulu (untuk cache build yang efisien)
-COPY package.json yarn.lock ./
+COPY package.json yarn.lock .yarnrc.yml ./
+COPY .yarn ./.yarn
 
 # Install dependencies
-RUN yarn install --frozen-lockfile
+RUN yarn install --immutable
 
 # Salin semua file project
 COPY . .
