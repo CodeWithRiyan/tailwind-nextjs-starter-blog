@@ -10,8 +10,11 @@ WORKDIR /app
 # Salin package.json terlebih dahulu (untuk cache build yang efisien)
 COPY package.json ./
 
-# Generate package-lock.json and install dependencies
-RUN npm install --legacy-peer-deps
+# Generate package-lock.json and install dependencies with retry logic
+RUN npm config set fetch-retry-mintimeout 20000 && \
+    npm config set fetch-retry-maxtimeout 120000 && \
+    npm config set fetch-retries 5 && \
+    npm install --legacy-peer-deps --verbose
 
 # Salin semua file project
 COPY . .
