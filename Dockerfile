@@ -4,6 +4,9 @@ FROM node:20-alpine AS base
 # Install dependency yang dibutuhkan untuk build (contoh: sharp untuk Next.js image optimization)
 RUN apk add --no-cache libc6-compat
 
+# Enable Corepack for proper Yarn version management
+RUN corepack enable
+
 # Set working directory
 WORKDIR /app
 
@@ -29,6 +32,9 @@ WORKDIR /app
 
 # Install dependency yang dibutuhkan untuk runtime Next.js
 RUN apk add --no-cache libc6-compat
+
+# Enable Corepack for runtime stage
+RUN corepack enable
 
 ENV NODE_ENV=production
 ENV PORT=3000
