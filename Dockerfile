@@ -1,35 +1,44 @@
-# Gunakan Node 20
-FROM node:20-alpine AS builder
+# Gunakan Node.js 20 untuk build dan runtime
+FROM node:20-alpine AS base
+
+# Install dependency yang dibutuhkan untuk build (contoh: sharp untuk Next.js image optimization)
+RUN apk add --no-cache libc6-compat
 
 # Set working directory
 WORKDIR /app
 
-# Copy package.json dan lockfile dulu untuk caching dependency
-COPY package.json package-lock.json* pnpm-lock.yaml* yarn.lock* ./
+# Salin package.json dan lockfile terlebih dahulu (untuk cache build yang efisien)
+COPY package*.json ./
 
-# Install dependencies (pakai npm, yarn, atau pnpm sesuai project)
-RUN npm install
+# Install dependencies
+RUN npm ci
 
-# Copy semua file project
+# Salin semua file project
 COPY . .
+
+# Pastikan NODE_ENV production
+ENV NODE_ENV=production
 
 # Build Next.js
 RUN npm run build
 
-# Stage produksi
+# Stage runtime
 FROM node:20-alpine AS runner
+
 WORKDIR /app
 
+# Install dependency yang dibutuhkan untuk runtime Next.js
+RUN apk add --no-cache libc6-compat
+
 ENV NODE_ENV=production
-
-# Copy hasil build dan file yang dibutuhkan untuk runtime
-COPY --from=builder /app/package.json ./
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/public ./public
-
-# Expose port Next.js
+ENV PORT=3000
 EXPOSE 3000
+
+# Salin hanya file yang dibutuhkan untuk runtime
+COPY --from=base /app/package*.json ./
+COPY --from=base /app/node_modules ./node_modules
+COPY --from=base /app/.next ./.next
+COPY --from=base /app/public ./public
 
 # Jalankan Next.js
 CMD ["npm", "start"]
