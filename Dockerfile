@@ -8,10 +8,10 @@ RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 # Salin package.json dan lockfile terlebih dahulu (untuk cache build yang efisien)
-COPY package*.json ./
+COPY package.json yarn.lock ./
 
 # Install dependencies
-RUN npm ci
+RUN yarn install --frozen-lockfile
 
 # Salin semua file project
 COPY . .
@@ -20,7 +20,7 @@ COPY . .
 ENV NODE_ENV=production
 
 # Build Next.js
-RUN npm run build
+RUN yarn build
 
 # Stage runtime
 FROM node:20-alpine AS runner
@@ -35,10 +35,10 @@ ENV PORT=3000
 EXPOSE 3000
 
 # Salin hanya file yang dibutuhkan untuk runtime
-COPY --from=base /app/package*.json ./
+COPY --from=base /app/package.json ./
 COPY --from=base /app/node_modules ./node_modules
 COPY --from=base /app/.next ./.next
 COPY --from=base /app/public ./public
 
 # Jalankan Next.js
-CMD ["npm", "start"]
+CMD ["yarn", "start"]
