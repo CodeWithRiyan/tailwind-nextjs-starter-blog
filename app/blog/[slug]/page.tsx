@@ -13,7 +13,6 @@ import PostBanner from '@/layouts/PostBanner'
 import { Metadata } from 'next'
 import siteMetadata from '@/data/siteMetadata'
 import { notFound } from 'next/navigation'
-import { getBlogPost } from 'fetch-ssr/blog-post'
 
 const defaultLayout = 'PostLayout'
 const layouts = {
@@ -22,24 +21,25 @@ const layouts = {
   PostBanner,
 }
 
+export const generateStaticParams = async () => {
+  return allBlogs.map((p) => ({ slug: p.slug }))
+}
+
 export async function generateMetadata(props: {
   params: Promise<{ slug: string }>
-  searchParams: Promise<{ locale: 'id-ID' | 'en-US' }>
 }): Promise<Metadata | undefined> {
   const { slug } = await props.params
-  const { locale } = await props.searchParams
-  const post = await getBlogPost({ locale, slug })
+  const post = allBlogs.find((p) => p.slug === slug)
 
   if (!post) return
 
-  const publishedAt = post?.date_published
-  const modifiedAt = post.date_updated
-  // const authors = authorDetails.map((author) => author.name)
-  const imageList = post?.images || []
+  const publishedAt = post?.date
+  const modifiedAt = post.lastmod
+  const imageList = post?.images ? [post.images] : []
 
   const ogImages = imageList.map((img) => {
     return {
-      url: img.includes('http') ? img : siteMetadata.siteUrl + img,
+      url: typeof img === 'string' && img.includes('http') ? img : siteMetadata.siteUrl + img,
     }
   })
 
@@ -56,7 +56,6 @@ export async function generateMetadata(props: {
       modifiedTime: modifiedAt,
       url: './',
       images: ogImages,
-      // authors: authors.length > 0 ? authors : [siteMetadata.author],
     },
     twitter: {
       card: 'summary_large_image',
@@ -69,18 +68,21 @@ export async function generateMetadata(props: {
 
 export default async function Page(props: {
   params: Promise<{ slug: string }>
-  searchParams: Promise<{ locale: 'id-ID' | 'en-US' }>
 }) {
   const { slug } = await props.params
-  const { locale } = await props.searchParams
 
-  // Filter out drafts in production
-  const post = await getBlogPost({ locale, slug })
-
-  // const prev = sortedCoreContents[postIndex + 1]
-  // const next = sortedCoreContents[postIndex - 1]
+  const post = allBlogs.find((p) => p.slug === slug)
+  const postIndex = allBlogs.findIndex((p) => p.slug === slug)
   
-  // const mainContent = coreContent(post)
+  if (!post) {
+    return notFound()
+  }
+
+  const sortedCoreContents = allCoreContent(sortPosts(allBlogs))
+  const prev = sortedCoreContents[postIndex + 1]
+  const next = sortedCoreContents[postIndex - 1]
+  
+  const mainContent = coreContent(post)
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
@@ -91,17 +93,13 @@ export default async function Page(props: {
     headline: post?.title,
     image: {
       '@type': 'ImageObject',
-      url: post?.images?.[0] || siteMetadata.siteUrl + siteMetadata.socialBanner,
+      url: post?.images || siteMetadata.siteUrl + siteMetadata.socialBanner,
     },
-    datePublished: post?.date_published,
-    dateModified: post?.date_updated,
-    // author: {
-    //   '@type': 'Person',
-    //   name: post.authors,
-    // },
+    datePublished: post?.date,
+    dateModified: post?.lastmod || post?.date,
   }
 
-  const Layout = layouts[defaultLayout]
+  const Layout = layouts[post?.layout || defaultLayout]
 
   return (
     <>
@@ -109,7 +107,9 @@ export default async function Page(props: {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <Layout content={post} />
+      <Layout content={mainContent} prev={prev} next={next}>
+        <MDXLayoutRenderer code={post.body.code} components={components} toc={post.toc} />
+      </Layout>
     </>
   )
 }
