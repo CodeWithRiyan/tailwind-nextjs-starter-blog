@@ -1,16 +1,14 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
-import { slug } from 'github-slugger'
 import { formatDate } from 'pliny/utils/formatDate'
-import { CoreContent } from 'pliny/utils/contentlayer'
-import type { Blog } from 'contentlayer/generated'
 import Link from '@/components/Link'
 import Tag from '@/components/Tag'
 import siteMetadata from '@/data/siteMetadata'
 import tagData from 'app/tag-data.json'
 import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react'
 import TagList from '@/components/TagList'
+import { BlogPost } from 'types/blog'
 
 interface PaginationProps {
   totalPages: number
@@ -18,9 +16,9 @@ interface PaginationProps {
 }
 
 interface ListLayoutProps {
-  posts: CoreContent<Blog>[]
+  posts: BlogPost[]
   title: string
-  initialDisplayPosts?: CoreContent<Blog>[]
+  initialDisplayPosts?: BlogPost[]
   pagination?: PaginationProps
 }
 
@@ -129,23 +127,23 @@ export default function ListLayoutWithTags({
           <div className="lg:col-span-8">
             <div className="space-y-6">
               {displayPosts.map((post) => {
-                const { path, date, title, summary, tags } = post
+                const { slug, date_published, title, summary, tags, language } = post
                 return (
                   <article
-                    key={path}
+                    key={slug}
                     className="overflow-hidden rounded-lg bg-white shadow transition duration-300 ease-in-out hover:shadow-lg dark:bg-gray-800"
                   >
                     <div className="p-6">
                       <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
                         <Calendar className="mr-2 h-4 w-4" />
-                        <time dateTime={date} suppressHydrationWarning>
-                          {formatDate(date, siteMetadata.locale)}
+                        <time dateTime={date_published} suppressHydrationWarning>
+                          {formatDate(date_published, siteMetadata.locale)}
                         </time>
                       </div>
 
                       <div className="mt-4">
                         <h2 className="text-2xl font-bold text-gray-900 hover:text-primary-600 dark:text-white dark:hover:text-primary-400">
-                          <Link href={`/${path}`} className="hover:underline">
+                          <Link href={`/blog/${slug}?locale=${language}`} className="hover:underline">
                             {title}
                           </Link>
                         </h2>
@@ -160,7 +158,7 @@ export default function ListLayoutWithTags({
 
                         <div className="mt-4">
                           <Link
-                            href={`/${path}`}
+                            href={`/blog/${slug}?locale=${language}`}
                             className="inline-flex items-center text-sm font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
                           >
                             Read more
