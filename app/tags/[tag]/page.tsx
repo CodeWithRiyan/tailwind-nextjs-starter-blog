@@ -7,6 +7,7 @@ import tagData from 'app/tag-data.json'
 import { genPageMetadata } from 'app/seo'
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
+import { transformBlogsToBlogPosts } from '@/utils/blogTransform'
 
 export async function generateMetadata(props: {
   params: Promise<{ tag: string }>
@@ -39,11 +40,12 @@ export default async function TagPage(props: { params: Promise<{ tag: string }> 
   const tag = decodeURI(params.tag)
   // Capitalize first letter and convert space to dash
   const title = tag[0].toUpperCase() + tag.split(' ').join('-').slice(1)
-  const filteredPosts = allCoreContent(
+  const filteredBlogs = allCoreContent(
     sortPosts(allBlogs.filter((post) => post.tags && post.tags.map((t) => slug(t)).includes(tag)))
   )
-  if (filteredPosts.length === 0) {
+  if (filteredBlogs.length === 0) {
     return notFound()
   }
+  const filteredPosts = transformBlogsToBlogPosts(filteredBlogs)
   return <ListLayout posts={filteredPosts} title={title} />
 }
