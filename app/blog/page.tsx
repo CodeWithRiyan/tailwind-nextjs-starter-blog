@@ -1,22 +1,29 @@
 import ListLayout from '@/layouts/ListLayoutWithTags'
-import { allCoreContent, sortPosts } from 'pliny/utils/contentlayer'
-import { allBlogs } from 'contentlayer/generated'
 import { genPageMetadata } from 'app/seo'
+import { getBlogPost, getBlogPosts } from 'fetch-ssr/blog-post';
+import { slug } from 'github-slugger';
 
-const POSTS_PER_PAGE = 5
+export const revalidate = 600; // ISR, cache 10 minutes
 
 export const metadata = genPageMetadata({ title: 'Blog' })
 
-export default function BlogPage() {
-  const posts = allCoreContent(sortPosts(allBlogs))
+const locale = 'id-ID'
+const page = 1
+const limit = 100
+
+export default async function BlogPage() {
+  const blogPosts = await getBlogPosts({ locale, page, limit })
+
+  const posts = blogPosts
+  
   const pageNumber = 1
   const initialDisplayPosts = posts.slice(
-    POSTS_PER_PAGE * (pageNumber - 1),
-    POSTS_PER_PAGE * pageNumber
+    limit * (pageNumber - 1),
+    limit * pageNumber
   )
   const pagination = {
     currentPage: pageNumber,
-    totalPages: Math.ceil(posts.length / POSTS_PER_PAGE),
+    totalPages: Math.ceil(posts.length / limit),
   }
 
   return (
